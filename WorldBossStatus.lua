@@ -1412,8 +1412,6 @@ function WorldBossStatus:GetWeeklyQuestResetTime()
    
    return time() + reset  
 end
-
-
  
 function WorldBossStatus:GetWorldBossKills()
 	local bossKills = {}
@@ -1452,13 +1450,13 @@ function WorldBossStatus:LFG_UPDATE_RANDOM_INFO()
 	end
 end
 
-function WorldBossStatus:GetBossInfo(instance, name)
+function WorldBossStatus:GetBossInfo(instance, name, questID)
 	local bossInfo = nil
 	
 	for _, region in pairs(WORLD_BOSSES) do
 		if region.name == instance or instance == nil then
 			for _, boss in pairs(region.bosses) do
-				if boss.name == name then
+				if (name and boss.name == name) or (questID and questID == boss.questId) then
 					bossInfo = boss	
 					break		
 				end
@@ -1469,24 +1467,25 @@ function WorldBossStatus:GetBossInfo(instance, name)
 	return bossInfo
 end
 
-function WorldBossStatus:BossKilled(name)
+function WorldBossStatus:BossKilled(name, questID)
 	local now = time()
-	local instance = EJ_GetInstanceInfo()
-	
+	local boss = WorldBossStatus:GetBossInfo(nil, name, questID)
+
 	WorldBossStatus.BonusRollStatus = nil
-
-	if WorldBossStatus:GetBossInfo(nil, name) then
-		--WorldBossStatus:Print(" World boss killed: "..name)	
-
+	
+	if boss then
+		--WorldBossStatus:Print(" World boss killed: "..boss.name)	
 		local characterInfo = WorldBossStatus:GetCharacterInfo()
-		local bossKill = characterInfo.worldBossKills[name] or {}
-		local bonusRollStatus = {lastBossKilled = name, lastBossKilledAt = now}
+		local bossKill = characterInfo.worldBossKills[boss.name] or {}
+		local bonusRollStatus = {lastBossKilled = boss.name, lastBossKilledAt = now}
 
 		bossKill.KillTime = now		
-		characterInfo.worldBossKills[name] = bossKill
+		characterInfo.worldBossKills[boss.name] = bossKill
 
 		WorldBossStatus:SaveCharacterInfo(characterInfo)
 		WorldBossStatus.BonusRollStatus = bonusRollStatus
+	else
+		--WorldBossStatus:Print("Non-world boss killed: ")	
 	end
 end
 
@@ -1496,7 +1495,6 @@ function WorldBossStatus:BonusRollUsed()
 
 	if bonusRollStatus then
 		--WorldBossStatus:Print("Bonus roll for " ..bonusRollStatus.lastBossKilled .. " used!")
-
 		local characterInfo = WorldBossStatus:GetCharacterInfo()
 		local bossKill = characterInfo.worldBossKills[bonusRollStatus.lastBossKilled] or {}
 
@@ -1510,21 +1508,18 @@ end
 
 function WorldBossStatus:BOSS_KILL(event, id, name)
 	--WorldBossStatus:Print("BOSS_KILL event received: "..id.." "..name)
-
-	WorldBossStatus:BossKilled(name)
+	WorldBossStatus:BossKilled(name, nil)
 end
 
 function WorldBossStatus:BONUS_ROLL_ACTIVATE(event, ...)
 	--WorldBossStatus:Print("BONUS_ROLL_ACTIVATE event received!")
-
 	if WorldBossStatus.BonusRollStatus then
 		WorldBossStatus.BonusRollStatus.currencyID = BonusRollFrame.currencyID
 	end
 end
 
 function WorldBossStatus:BONUS_ROLL_RESULT(event, rewardType, rewardLink, rewardQuantity, rewardSpecID)
-	--WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")
-	
+	--WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")	
 	WorldBossStatus:BonusRollUsed()
 end
 
@@ -1532,22 +1527,15 @@ function WorldBossStatus:LFG_COMPLETION_REWARD()
 	RequestLFDPlayerLockInfo()
 end
 
-function WorldBossStatus:QUEST_ACCEPTED(event, questLogID)
-	--WorldBossStatus:Print("QUEST_ACCEPTED event received for: "..questLogID)
-	questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questID = GetQuestLogTitle(questLogID);
-	if ( not isHeader ) then
-		WorldBossStatus:Print(questTitle .. " [" .. level .. "] " .. questID)
-	end
-end
-
-function WorldBossStatus:QUEST_FINISHED(event)
-	--WorldBossStatus:Print("QUEST_FINISHED event received!")
+function WorldBossStatus:QUEST_TURNED_IN(event, questID)
+	--WorldBossStatus:Print("Quest turned in for quest ID: "..questID)
+	WorldBossStatus:BossKilled(nil, questID)
 end
 
 oldLogout = Logout;
 oldQuit = Quit;
 
-function WorldBossStatus:UpdateWorldBossKills()
+function WorldBossStatus:UpdateWorldBossKills()	
 	RequestRaidInfo();		
 end
 
@@ -1589,11 +1577,11 @@ function WorldBossStatus:DoEnable()
 	self:RegisterEvent("BONUS_ROLL_RESULT")
 	self:RegisterEvent("BONUS_ROLL_ACTIVATE")	
 	self:RegisterEvent("BOSS_KILL")
-	--self:RegisterEvent("QUEST_ACCEPTED")
-	--self:RegisterEvent("QUEST_FINISHED")	
+	self:RegisterEvent("QUEST_TURNED_IN")
+
 
 	WorldBossStatus:GetSinkAce3OptionsDataTable()
-	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 10)
+	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 7)
 end
 
 function WorldBossStatus:OnDisable()
@@ -1603,6 +1591,5 @@ function WorldBossStatus:OnDisable()
 	self:UnregisterEvent("BONUS_ROLL_RESULT")
 	self:UnregisterEvent("BONUS_ROLL_ACTIVATE")
 	self:UnregisterEvent("BOSS_KILL")
-	--self:UnregisterEvent("QUEST_ACCEPTED")
-	--self:UnregisterEvent("QUEST_FINISHED")
+	self:UnregisterEvent("QUEST_TURNED_IN")
 end
