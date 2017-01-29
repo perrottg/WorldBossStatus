@@ -1104,6 +1104,7 @@ end
 
 function WorldBossStatus:OnInitialize()	
 	self.db = LibStub("AceDB-3.0"):New("WorldBossStatusDB", defaults, true)
+	self.debug = false
 
 	LDBIcon:Register(addonName, WorldBossStatusLauncher, self.db.global.MinimapButton)
 
@@ -1125,6 +1126,10 @@ function WorldBossStatus:OnInitialize()
 	--wbsdia:AddToBlizOptions("World Boss Status Bonus Rolls", L["Bonus Rolls"], L["World Boss Status"])
 
 	--self:SetSinkStorage(self.db)
+
+	self:RegisterChatCommand("wbs", "ChatCommand")
+	self:RegisterChatCommand("worldbossstatus", "ChatCommand")
+
 
 	RequestRaidInfo()
 end
@@ -1436,6 +1441,24 @@ function WorldBossStatus:GetWorldBossKills()
 	return bossKills
 end
 
+function WorldBossStatus:ChatCommand(input)
+	if not input or input:trim() == "" then 
+		return
+	end
+
+	local command = input:lower() or nil
+
+	if command == "debug on" then
+		WorldBossStatus.debg = true
+		WorldBossStatus:Print("Debug turned on")
+	elseif command == "debug off" then
+		WorldBossStatus.debug = false
+		WorldBossStatus:Print("Debug turned off")
+	else
+		WorldBossStatus:Print("Unknown command: " .. command)
+	end
+end
+
 function WorldBossStatus:UPDATE_INSTANCE_INFO()
 	WorldBossStatus:SaveCharacterInfo()
 	if LibQTip:IsAcquired("WorldBossStatusTooltip") and WorldBossStatus.tooltip then
@@ -1467,26 +1490,24 @@ function WorldBossStatus:GetBossInfo(instance, name, questID)
 	return bossInfo
 end
 
-function WorldBossStatus:BossKilled(name, questID)
-	local now = time()
-	local boss = WorldBossStatus:GetBossInfo(nil, name, questID)
-
-	WorldBossStatus.BonusRollStatus = nil
-	
-	if boss then
-		--WorldBossStatus:Print(" World boss killed: "..boss.name)	
-		local characterInfo = WorldBossStatus:GetCharacterInfo()
-		local bossKill = characterInfo.worldBossKills[boss.name] or {}
-		local bonusRollStatus = {lastBossKilled = boss.name, lastBossKilledAt = now}
-
-		bossKill.KillTime = now		
-		characterInfo.worldBossKills[boss.name] = bossKill
-
-		WorldBossStatus:SaveCharacterInfo(characterInfo)
-		WorldBossStatus.BonusRollStatus = bonusRollStatus
-	else
-		--WorldBossStatus:Print("Non-world boss killed: ")	
+function WorldBossStatus:BossKilled(boss)
+	if not boss then 
+		return
 	end
+
+	local now = time()
+	local characterInfo = WorldBossStatus:GetCharacterInfo()
+	local bossKill = characterInfo.worldBossKills[boss.name] or {}
+	local bonusRollStatus = {lastBossKilled = boss.name, lastBossKilledAt = now}
+
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print(" World boss killed: "..boss.name)	
+	end
+	
+	bossKill.KillTime = now		
+	characterInfo.worldBossKills[boss.name] = bossKill
+	WorldBossStatus:SaveCharacterInfo(characterInfo)
+	WorldBossStatus.BonusRollStatus = bonusRollStatus
 end
 
 function WorldBossStatus:BonusRollUsed()
@@ -1494,7 +1515,9 @@ function WorldBossStatus:BonusRollUsed()
 	local bonusRollStatus = WorldBossStatus.BonusRollStatus
 
 	if bonusRollStatus then
-		--WorldBossStatus:Print("Bonus roll for " ..bonusRollStatus.lastBossKilled .. " used!")
+		if WorldBossStatus.debug then
+			WorldBossStatus:Print("Bonus roll for " ..bonusRollStatus.lastBossKilled .. " used!")
+		end
 		local characterInfo = WorldBossStatus:GetCharacterInfo()
 		local bossKill = characterInfo.worldBossKills[bonusRollStatus.lastBossKilled] or {}
 
@@ -1507,19 +1530,31 @@ function WorldBossStatus:BonusRollUsed()
 end
 
 function WorldBossStatus:BOSS_KILL(event, id, name)
-	--WorldBossStatus:Print("BOSS_KILL event received: "..id.." "..name)
-	WorldBossStatus:BossKilled(name, nil)
+	local boss = WorldBossStatus:GetBossInfo(nil, name, nil)
+
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("BOSS_KILL event received for ID: " .. id or "" .. " and Name: " .. name or "")
+	end
+
+	if boss then
+		WorldBossStatus:BossKilled(boss)
+	end
 end
 
 function WorldBossStatus:BONUS_ROLL_ACTIVATE(event, ...)
-	--WorldBossStatus:Print("BONUS_ROLL_ACTIVATE event received!")
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("BONUS_ROLL_ACTIVATE event received!")
+	end
+
 	if WorldBossStatus.BonusRollStatus then
 		WorldBossStatus.BonusRollStatus.currencyID = BonusRollFrame.currencyID
 	end
 end
 
 function WorldBossStatus:BONUS_ROLL_RESULT(event, rewardType, rewardLink, rewardQuantity, rewardSpecID)
-	--WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")	
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")	
+	end
 	WorldBossStatus:BonusRollUsed()
 end
 
@@ -1528,8 +1563,15 @@ function WorldBossStatus:LFG_COMPLETION_REWARD()
 end
 
 function WorldBossStatus:QUEST_TURNED_IN(event, questID)
-	--WorldBossStatus:Print("Quest turned in for quest ID: "..questID)
-	WorldBossStatus:BossKilled(nil, questID)
+	local boss = WorldBossStatus:GetBossInfo(nil, nil, questID)
+
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("QUEST_TURNED_IN event received for quest ID: " ..  questID or "")
+	end
+	
+	if boss then
+		WorldBossStatus:BossKilled(boss)
+	end
 end
 
 oldLogout = Logout;
