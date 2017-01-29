@@ -1104,7 +1104,7 @@ end
 
 function WorldBossStatus:OnInitialize()	
 	self.db = LibStub("AceDB-3.0"):New("WorldBossStatusDB", defaults, true)
-	self.debug = false
+	WorldBossStatus.debug = false
 
 	LDBIcon:Register(addonName, WorldBossStatusLauncher, self.db.global.MinimapButton)
 
@@ -1449,7 +1449,7 @@ function WorldBossStatus:ChatCommand(input)
 	local command = input:lower() or nil
 
 	if command == "debug on" then
-		WorldBossStatus.debg = true
+		WorldBossStatus.debug = true
 		WorldBossStatus:Print("Debug turned on")
 	elseif command == "debug off" then
 		WorldBossStatus.debug = false
@@ -1555,6 +1555,7 @@ function WorldBossStatus:BONUS_ROLL_RESULT(event, rewardType, rewardLink, reward
 	if WorldBossStatus.debug then
 		WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")	
 	end
+
 	WorldBossStatus:BonusRollUsed()
 end
 
@@ -1563,11 +1564,11 @@ function WorldBossStatus:LFG_COMPLETION_REWARD()
 end
 
 function WorldBossStatus:QUEST_TURNED_IN(event, questID)
-	local boss = WorldBossStatus:GetBossInfo(nil, nil, questID)
-
 	if WorldBossStatus.debug then
 		WorldBossStatus:Print("QUEST_TURNED_IN event received for quest ID: " ..  questID or "")
 	end
+
+	local boss = WorldBossStatus:GetBossInfo(nil, nil, questID)
 	
 	if boss then
 		WorldBossStatus:BossKilled(boss)
