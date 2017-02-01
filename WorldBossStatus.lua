@@ -110,8 +110,19 @@ end
 for _, region in pairs(WORLD_BOSSES) do
 	region.name = EJ_GetInstanceInfo(region.instanceId)
 	for _, boss in pairs(region.bosses) do
-		if not boss.name and boss.encounterId then 
-			boss.name = EJ_GetEncounterInfo(boss.encounterId)
+		if region.instanceId == 322 then
+			if not boss.name and boss.encounterId then
+				_, boss.name = EJ_GetCreatureInfo(1, boss.encounterId)    
+			end
+		else
+			if not boss.name and boss.encounterId then 
+				boss.name = EJ_GetEncounterInfo(boss.encounterId)
+			end			
+		end
+		if not boss.displayName and boss.encounterId then
+			boss.displayName = EJ_GetEncounterInfo(boss.encounterId)
+		elseif not boss.displayName and boss.name then
+			boss.displayName = boss.name
 		end
 	end
 end
@@ -788,7 +799,7 @@ local function ShowKill(boss, kill, lastReset)
 		color = red
 	end
 	
-	subTooltip:SetCell(line, 1, boss.name, nil, "LEFT")
+	subTooltip:SetCell(line, 1, boss.displayName, nil, "LEFT")
 	subTooltip:SetCell(line, 2, desc, nil, "RIGHT")	
 	subTooltip:SetCell(line, 3, bossTexture, nil, "RIGHT", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCell(line, 4, rollTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
