@@ -41,7 +41,11 @@ local WORLD_BOSSES = { {instanceId = 822,                                  -- Br
 						     	   {encounterId = 1749, questId = 42270},  -- Nithogg
     							   {encounterId = 1763, questId = 42779},  -- Shar'thos
            						   {encounterId = 1756, questId = 42269},  -- The Soultakers
-						 		   {encounterId = 1796, questId = 44287}   -- Withered'Jim
+						 		   {encounterId = 1796, questId = 44287},  -- Withered'Jim
+								   {encounterId = 1956, questId = 47061},  -- Apocron
+								   {encounterId = 1883, questId = 46947},  -- Brutallus
+								   {encounterId = 1884, questId = 46948},  -- Malificus
+								   {encounterId = 1885, questId = 46945}   -- Si'vash
 	 				             }
 					   },
 					   {instanceId = 557,                                  -- Draenor 
@@ -84,19 +88,7 @@ local CURRENCIES = {	{currencyId = 1273,														  -- Seal of Broken Fate
 						{currencyId = 1155}														  -- Ancient Mana
 }
 
-local MAP_ZONES = {
-	[1015] = { id = 1015, name = GetMapNameByID(1015), quests = {}, buttons = {}, glows = {}, },  -- Aszuna
-	[1096] = { id = 1096, name = GetMapNameByID(1096), quests = {}, buttons = {}, glows = {}, },  -- Eye of Azshara
-	[1018] = { id = 1018, name = GetMapNameByID(1018), quests = {}, buttons = {}, glows = {}, },  -- Val'sharah
-	[1024] = { id = 1024, name = GetMapNameByID(1024), quests = {}, buttons = {}, glows = {}, },  -- Highmountain
-	[1017] = { id = 1017, name = GetMapNameByID(1017), quests = {}, buttons = {}, glows = {}, },  -- Stormheim
-	[1033] = { id = 1033, name = GetMapNameByID(1033), quests = {}, buttons = {}, glows = {}, },  -- Suramar
-	[1014] = { id = 1014, name = GetMapNameByID(1014), quests = {}, buttons = {}, glows = {}, },  -- Dalaran
-}
 
-local MAP_ZONES_SORT = {
-	1015, 1096, 1018, 1024, 1017, 1033, 1014
-}
 local MAPID_BROKENISLES = 1007
 local isInitialized = false
 	 
@@ -630,19 +622,25 @@ local options = {
 function WorldBossStatus:GetActiveWorldBosses()
 
 	local questsFound = {}
+	local questsLocation = {}
 	local activeWorldBosses = {}
 
-	for mapId in next, MAP_ZONES do
-		local questList = C_TaskQuest.GetQuestsForPlayerByMapID(mapId, MAPID_BROKENISLES)
+
+
+	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
+		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
+		if zoneDepth <= 1 then
+			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
    
-		if questList then
-			for i = 1, #questList do      
-				timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)               
-				tagId, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
+			if questList then
+				for i = 1, #questList do      
+					timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)               
+					tagId, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
                   
-				if rarity == LE_WORLD_QUEST_QUALITY_EPIC then
-					--WorldBossStatus:Print("Found epic world quest: " .. questList[i].questId)
-					questsFound[questList[i].questId] = time()
+					if rarity == LE_WORLD_QUEST_QUALITY_EPIC then
+						questsFound[questList[i].questId] = time()
+						questsLocation[questList[i].questId] = zoneName
+					end
 				end
 			end
 		end
@@ -654,8 +652,10 @@ function WorldBossStatus:GetActiveWorldBosses()
 				boss.name = EJ_GetEncounterInfo(boss.encounterId)
 			end
 			if questsFound[boss.questId] or (boss.questId and IsQuestFlaggedCompleted(boss.questId)) then
-				--WorldBossStatus:Print('Found active world boss: '..boss.name.."("..boss.questId..")")              
 				activeWorldBosses[boss.name] = time()
+			end
+			if questsLocation[boss.questId] then
+				boss.location = questsLocation[boss.questId]
 			end
 		end
 	end
@@ -1061,10 +1061,8 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 		end
 		
 
-		if kills == region.maxKills then
+		if kills >= region.maxKills then
 			tooltip:SetCell(line, column, textures.bossDefeated)
-		--elseif kills > 0 then
-		--	tooltip:SetCell(line, column, kills.."/"..region.maxKills)
 		else  
 			--tooltip:SetCell(line, column, textures.bossAvailable)
 			tooltip:SetCell(line, column, kills.."/"..region.maxKills)
@@ -1586,6 +1584,56 @@ function WorldBossStatus:QUEST_TURNED_IN(event, questID)
 	end
 end
 
+function WorldBossStatus:GARRISON_LANDINGPAGE_SHIPMENTS(event)
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("GARRISON_LANDINGPAGE_SHIPMENTS event received!")
+	end
+end
+
+function WorldBossStatus:GARRISON_UPDATE(event)
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("GARRISON_UPDATE event received!")
+	end
+end
+
+function WorldBossStatus:CHAT_MSG_CURRENCY(event, message, textMessage)
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("CHAT_MSG_CURRENCY event received for message: " .. message)
+	end
+end
+
+
+function WorldBossStatus:SHIPMENT_CRAFTER_REAGENT_UPDATE(event)
+	
+
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("SHIPMENT_CRAFTER_REAGENT_UPDATE event received!")
+	end
+
+	local name, texture, quality, itemID, duration = C_Garrison.GetShipmentItemInfo();
+
+
+	if WorldBossStatus.debug then
+		WorldBossStatus:Print("name: " .. name or  "")
+		WorldBossStatus:Print("itemID: " .. itemID or  "")
+	end
+end
+
+
+function WorldBossStatus:SHIPMENT_UPDATE(event, shipmentStarted, isTroop, ...)
+	if WorldBossStatus.debug then
+		--WorldBossStatus:Print("SHIPMENT_UPDATE event received!")
+		if shipmentStarted then			
+			WorldBossStatus:Print("SHIPMENT_UPDATE event received! Shipment Started!")
+			C_Garrison.RequestShipmentInfo();
+		end
+		if isTroop then
+			WorldBossStatus:Print("SHIPMENT_UPDATE event received! IsTroop!")
+		end
+	end
+end
+
+
 oldLogout = Logout;
 oldQuit = Quit;
 
@@ -1615,8 +1663,13 @@ local function CheckWorldBosses()
 		region.name = EJ_GetInstanceInfo(region.instanceId)
 		for _, boss in pairs(region.bosses) do
 			if activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
-				local boss = colorise(boss.name, epic)
-				local text = format("A quest is available for world boss %s! Go defeat it!", boss)
+				local bossname = colorise(boss.name, epic)
+				local text = ""
+				if boss.location then
+					text = format("A quest is available in %s for world boss %s! Go defeat it!", boss.location, bossname)
+				else
+					text = format("A quest is available for world boss %s! Go defeat it!", bossname)
+				end
 				WorldBossStatus:Pour(text, 1, 1, 1)
 			end
 		end
@@ -1633,6 +1686,11 @@ function WorldBossStatus:DoEnable()
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
 
+	--self:RegisterEvent("GARRISON_LANDINGPAGE_SHIPMENTS")
+	--self:RegisterEvent("GARRISON_UPDATE")
+	self:RegisterEvent("CHAT_MSG_CURRENCY")
+	self:RegisterEvent("SHIPMENT_CRAFTER_REAGENT_UPDATE");
+    self:RegisterEvent("SHIPMENT_UPDATE");
 
 	WorldBossStatus:GetSinkAce3OptionsDataTable()
 	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 7)
@@ -1646,4 +1704,10 @@ function WorldBossStatus:OnDisable()
 	self:UnregisterEvent("BONUS_ROLL_ACTIVATE")
 	self:UnregisterEvent("BOSS_KILL")
 	self:UnregisterEvent("QUEST_TURNED_IN")
+
+	--self:UnregisterEvent("GARRISON_LANDINGPAGE_SHIPMENTS")
+	--self:UnregisterEvent("GARRISON_UPDATE")
+	self:UnregisterEvent("CHAT_MSG_CURRENCY")
+	self:UnregisterEvent("SHIPMENT_CRAFTER_REAGENT_UPDATE");
+    self:UnregisterEvent("SHIPMENT_UPDATE");
 end
