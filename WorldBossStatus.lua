@@ -45,7 +45,8 @@ local WORLD_BOSSES = { {instanceId = 822,                                  -- Br
 								   {encounterId = 1956, questId = 47061},  -- Apocron
 								   {encounterId = 1883, questId = 46947},  -- Brutallus
 								   {encounterId = 1884, questId = 46948},  -- Malificus
-								   {encounterId = 1885, questId = 46945}   -- Si'vash
+								   {encounterId = 1885, questId = 46945},  -- Si'vash
+								   {name = "Kosumoth", questId = 43798}	 -- Kosumoth
 	 				             }
 					   },
 					   {instanceId = 557,                                  -- Draenor 
@@ -80,8 +81,7 @@ local CURRENCIES = {	{currencyId = 1273,														  -- Seal of Broken Fate
 									{questId = 43892, level = 1, cost = 1000, currencyId = 1220}, -- Sealing Fate: Order Resources
 									{questId = 43893, level = 2, cost = 2000, currencyId = 1220}, -- Sealing Fate: Stashed Order Resources
 									{questId = 43894, level = 3, cost = 4000, currencyId = 1220}, -- Sealing Fate: Extraneous Order Resources
-							 		{questId = 44219},											  -- Fates Blessing
-									{questId = 44230}	
+									{questId = 43510}											  -- Class Hall
 								  }
 						},
 						{currencyId = 1220},													  -- Order Resources						 						
@@ -629,6 +629,7 @@ function WorldBossStatus:GetActiveWorldBosses()
 
 	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
 		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
+		--WorldBossStatus:Print("Checking " .. zoneName .. " for world  quests...")
 		if zoneDepth <= 1 then
 			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
    
@@ -637,10 +638,12 @@ function WorldBossStatus:GetActiveWorldBosses()
 					timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)               
 					tagId, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
                   
-					if rarity == LE_WORLD_QUEST_QUALITY_EPIC then
+					--if rarity == LE_WORLD_QUEST_QUALITY_EPIC then
 						questsFound[questList[i].questId] = time()
 						questsLocation[questList[i].questId] = zoneName
-					end
+						
+					--end
+					
 				end
 			end
 		end
@@ -1002,7 +1005,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 		
 		if currencyInfo then
 			if currency.weeklyMax then
-				tooltip:SetCell(line, column, currencyInfo.balance .. "  " .. currencyInfo.collectedThisWeek.."/"..currency.weeklyMax, niil, "RIGHT")
+				tooltip:SetCell(line, column, currencyInfo.balance .. "  " .. currencyInfo.collectedThisWeek.."/"..currency.weeklyMax, nil, "RIGHT")
 			else
 				tooltip:SetCell(line, column, BreakUpLargeNumbers(currencyInfo.balance), nil, "RIGHT")
 			end
@@ -1395,22 +1398,23 @@ function WorldBossStatus:GetBonusRollsStatus()
 
 	for _, currency in pairs(CURRENCIES) do
 		local currencyInfo = {}		
-		_, currencyInfo.balance, _, currencyInfo.collectedThisWeek = GetCurrencyInfo(currency.currencyId)		
-		if currency.quests then		
-			currencyInfo.collectionQuests = {}
-			currencyInfo.collectedThisWeek = 0		
-			currencyInfo.earnedThisWeek = 0
-			for _, quest in pairs(currency.quests) do				
-				currencyInfo.collectionQuests[quest.questId] = IsQuestFlaggedCompleted(quest.questId)
-				if currencyInfo.collectionQuests[quest.questId] then
-					if currencyInfo.collectedThisWeek then
-						currencyInfo.collectedThisWeek = currencyInfo.collectedThisWeek + 1		
-					end
-					currencyInfo.earnedThisWeek = currencyInfo.earnedThisWeek + 1
-				end	
-			end					
-			currencyInfo.questReset = WorldBossStatus:GetWeeklyQuestResetTime()	
-		end						
+		local _, balance, _, collectedThisWeek, weeklyMax, totalMax, _, _ = GetCurrencyInfo(currency.currencyId)
+		local collectedFromQuests = 0
+
+		if currency.quests then
+			for _, quest in pairs(currency.quests) do						
+				if IsQuestFlaggedCompleted(quest.questId) then
+					collectedFromQuests = collectedFromQuests + 1					
+				end
+			end			
+
+		end
+
+		currencyInfo.collectedThisWeek = collectedThisWeek + collectedFromQuests
+		currencyInfo.balance = balance
+		currencyInfo.weeklyMax = weeklyMax
+		currencyInfo.totalMax = totalMax
+		currencyInfo.questReset = WorldBossStatus:GetWeeklyQuestResetTime()					
 		currencies[currency.currencyId] = currencyInfo		
 	end
 	
@@ -1584,55 +1588,6 @@ function WorldBossStatus:QUEST_TURNED_IN(event, questID)
 	end
 end
 
-function WorldBossStatus:GARRISON_LANDINGPAGE_SHIPMENTS(event)
-	if WorldBossStatus.debug then
-		WorldBossStatus:Print("GARRISON_LANDINGPAGE_SHIPMENTS event received!")
-	end
-end
-
-function WorldBossStatus:GARRISON_UPDATE(event)
-	if WorldBossStatus.debug then
-		WorldBossStatus:Print("GARRISON_UPDATE event received!")
-	end
-end
-
-function WorldBossStatus:CHAT_MSG_CURRENCY(event, message, textMessage)
-	if WorldBossStatus.debug then
-		WorldBossStatus:Print("CHAT_MSG_CURRENCY event received for message: " .. message)
-	end
-end
-
-
-function WorldBossStatus:SHIPMENT_CRAFTER_REAGENT_UPDATE(event)
-	
-
-	if WorldBossStatus.debug then
-		WorldBossStatus:Print("SHIPMENT_CRAFTER_REAGENT_UPDATE event received!")
-	end
-
-	local name, texture, quality, itemID, duration = C_Garrison.GetShipmentItemInfo();
-
-
-	if WorldBossStatus.debug then
-		WorldBossStatus:Print("name: " .. name or  "")
-		WorldBossStatus:Print("itemID: " .. itemID or  "")
-	end
-end
-
-
-function WorldBossStatus:SHIPMENT_UPDATE(event, shipmentStarted, isTroop, ...)
-	if WorldBossStatus.debug then
-		--WorldBossStatus:Print("SHIPMENT_UPDATE event received!")
-		if shipmentStarted then			
-			WorldBossStatus:Print("SHIPMENT_UPDATE event received! Shipment Started!")
-			C_Garrison.RequestShipmentInfo();
-		end
-		if isTroop then
-			WorldBossStatus:Print("SHIPMENT_UPDATE event received! IsTroop!")
-		end
-	end
-end
-
 
 oldLogout = Logout;
 oldQuit = Quit;
@@ -1663,10 +1618,13 @@ local function CheckWorldBosses()
 		region.name = EJ_GetInstanceInfo(region.instanceId)
 		for _, boss in pairs(region.bosses) do
 			if activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
+				local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
+				--local dd = SecondsToTime(timeLeft * 60, true, true, 2)
 				local bossname = colorise(boss.name, epic)
 				local text = ""
 				if boss.location then
 					text = format("A quest is available in %s for world boss %s! Go defeat it!", boss.location, bossname)
+					--text = format("A quest is available in %s for world boss %s! You have %s to complete it.", boss.location, bossname, dd)
 				else
 					text = format("A quest is available for world boss %s! Go defeat it!", bossname)
 				end
@@ -1686,12 +1644,6 @@ function WorldBossStatus:DoEnable()
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
 
-	--self:RegisterEvent("GARRISON_LANDINGPAGE_SHIPMENTS")
-	--self:RegisterEvent("GARRISON_UPDATE")
-	self:RegisterEvent("CHAT_MSG_CURRENCY")
-	self:RegisterEvent("SHIPMENT_CRAFTER_REAGENT_UPDATE");
-    self:RegisterEvent("SHIPMENT_UPDATE");
-
 	WorldBossStatus:GetSinkAce3OptionsDataTable()
 	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 7)
 end
@@ -1704,10 +1656,4 @@ function WorldBossStatus:OnDisable()
 	self:UnregisterEvent("BONUS_ROLL_ACTIVATE")
 	self:UnregisterEvent("BOSS_KILL")
 	self:UnregisterEvent("QUEST_TURNED_IN")
-
-	--self:UnregisterEvent("GARRISON_LANDINGPAGE_SHIPMENTS")
-	--self:UnregisterEvent("GARRISON_UPDATE")
-	self:UnregisterEvent("CHAT_MSG_CURRENCY")
-	self:UnregisterEvent("SHIPMENT_CRAFTER_REAGENT_UPDATE");
-    self:UnregisterEvent("SHIPMENT_UPDATE");
 end
