@@ -30,8 +30,8 @@ local frame
 
 local WORLD_BOSSES = { {instanceId = 822,                                  -- Broken Isles
 						bonusRollCurrencies = {1273},
-					    maxKills = 1,bosses = { 
-								   {encounterId = 1790, questId = 43512},  -- Ana-Mouz
+					    maxKills = 1,
+						bosses = { {encounterId = 1790, questId = 43512},  -- Ana-Mouz
 								   {encounterId = 1774, questId = 43193},  -- Calamir
 								   {encounterId = 1789, questId = 43448},  -- Drugon the Frostblood
 								   {encounterId = 1795, questId = 43985},  -- Flotsam
@@ -619,17 +619,45 @@ local options = {
 	}
 }
 
+function WorldBossStatus.UpdateActiveWorldQuests()
+	local worldQuests = {}
+
+	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
+		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
+
+		if zoneDepth <= 1 then
+			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
+   
+			if questList then
+				for i = 1, #questList do  
+					local questId = questList[i].questId
+					local quest = {}
+
+					quest.questId = questId
+					quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questId)
+					quest.zone = zoneName
+					quest.timeLeftMinutes = C_TaskQuest.GetQuestTimeLeftMinutes(questId)
+
+					worldQuests[quest.questId] = quest
+				end
+			end
+		end
+	end
+
+end
+
 function WorldBossStatus:GetActiveWorldBosses()
 
 	local questsFound = {}
 	local questsLocation = {}
 	local activeWorldBosses = {}
+	
 
 
 
 	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
 		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
-		--WorldBossStatus:Print("Checking " .. zoneName .. " for world  quests...")
+
 		if zoneDepth <= 1 then
 			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
    
@@ -637,13 +665,8 @@ function WorldBossStatus:GetActiveWorldBosses()
 				for i = 1, #questList do      
 					timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)               
 					tagId, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
-                  
-					--if rarity == LE_WORLD_QUEST_QUALITY_EPIC then
-						questsFound[questList[i].questId] = time()
-						questsLocation[questList[i].questId] = zoneName
-						
-					--end
-					
+					questsFound[questList[i].questId] = time()
+					questsLocation[questList[i].questId] = zoneName
 				end
 			end
 		end
@@ -1421,12 +1444,19 @@ function WorldBossStatus:GetBonusRollsStatus()
 	return currencies
 end
 
+function WorldBossStatus:GetRegion()
+
+
+end
+
 function WorldBossStatus:GetWeeklyQuestResetTime()
    local now = time()
+   local region = GetCurrentRegion()
    local dayOffset = { 2, 1, 0, 6, 5, 4, 3 }
+   local regionDayOffset = {{ 2, 1, 0, 6, 5, 4, 3 }, { 4, 3, 2, 1, 0, 6, 5 }, { 3, 2, 1, 0, 6, 5, 4 }, { 4, 3, 2, 1, 0, 6, 5 }, { 4, 3, 2, 1, 0, 6, 5 } }
    local nextDailyReset = GetQuestResetTime()
    local utc = date("!*t", now + nextDailyReset)      
-   local reset = dayOffset[utc.wday] * 86400 + nextDailyReset
+   local reset = regionDayOffset[region][utc.wday] * 86400 + nextDailyReset
    
    return time() + reset  
 end
