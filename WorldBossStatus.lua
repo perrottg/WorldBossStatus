@@ -1619,22 +1619,12 @@ function WorldBossStatus:QUEST_TURNED_IN(event, questID)
 end
 
 
-oldLogout = Logout;
-oldQuit = Quit;
-
 function WorldBossStatus:UpdateWorldBossKills()	
 	RequestRaidInfo();		
 end
 
-
-function Quit()
+function WorldBossStatus:PLAYER_LOGOUT()
 	WorldBossStatus:UpdateWorldBossKills()
-	oldQuit();
-end
-
-function Logout()
-	WorldBossStatus:UpdateWorldBossKills()
-	oldLogout();
 end
 
 function WorldBossStatus:OnEnable()		
@@ -1673,6 +1663,7 @@ function WorldBossStatus:DoEnable()
 	self:RegisterEvent("BONUS_ROLL_ACTIVATE")	
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
+	self:RegisterEvent("PLAYER_LOGOUT")
 
 	WorldBossStatus:GetSinkAce3OptionsDataTable()
 	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 7)
@@ -1686,4 +1677,5 @@ function WorldBossStatus:OnDisable()
 	self:UnregisterEvent("BONUS_ROLL_ACTIVATE")
 	self:UnregisterEvent("BOSS_KILL")
 	self:UnregisterEvent("QUEST_TURNED_IN")
+	self:UnregisterEvent("PLAYER_LOGOUT")
 end
