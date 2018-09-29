@@ -1628,7 +1628,9 @@ local function CheckWorldBosses()
 	local activeBosses = WorldBossStatus:GetActiveWorldBosses()
 
 	for _, region in pairs(WORLD_BOSSES) do
+	if not region.name then
 		region.name = EJ_GetInstanceInfo(region.instanceId)
+	end
 		for _, boss in pairs(region.bosses) do
 			if activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
 				local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
