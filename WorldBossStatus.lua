@@ -28,64 +28,55 @@ local white = { r = 1.0, g = 1.0, b = 1.0 }
 local epic = { r = 0.63921568627451, g = 0.2078431372549, b = 0.93333333333333 }
 local frame
 
-local WORLD_BOSSES = { {instanceId = 822,                                  -- Broken Isles
-						bonusRollCurrencies = {1273},
-					    maxKills = 1,
-						bosses = { {encounterId = 1790, questId = 43512},  -- Ana-Mouz
-								   {encounterId = 1774, questId = 43193},  -- Calamir
-								   {encounterId = 1789, questId = 43448},  -- Drugon the Frostblood
-								   {encounterId = 1795, questId = 43985},  -- Flotsam
-							       {encounterId = 1770, questId = 42819},  -- Humongris 
-								   {encounterId = 1769, questId = 43192},  -- Levantus
-        						   {encounterId = 1783, questId = 43513},  -- Na'zak the Fiend
-						     	   {encounterId = 1749, questId = 42270},  -- Nithogg
-    							   {encounterId = 1763, questId = 42779},  -- Shar'thos
-           						   {encounterId = 1756, questId = 42269},  -- The Soultakers
-						 		   {encounterId = 1796, questId = 44287},  -- Withered'Jim
-								   {encounterId = 1956, questId = 47061},  -- Apocron
-								   {encounterId = 1883, questId = 46947},  -- Brutallus
-								   {encounterId = 1884, questId = 46948},  -- Malificus
-								   {encounterId = 1885, questId = 46945},  -- Si'vash
-								   {name = "Kosumoth", questId = 43798}	 -- Kosumoth
+
+
+
+local englishFaction, localizedFaction = UnitFactionGroup("player")
+local arathiBossQuestID = 52847 -- Doom's Howl
+local arathiBossEncounterId = 2213 -- Doom's Howl
+if englishFaction and englishFaction == "Horde" then
+	arathiBossQuestID = arathiBossQuestID + 1  -- The Lion's Roar
+	arathiBossEncounterId = arathiBossEncounterId - 1 -- The Lion's Roar
+end
+
+--http://www.wowinterface.com/forums/showthread.php?t=53806
+
+local WORLD_BOSSES = { {name = 'Zuldazar & Kul Tiras',
+                        instanceId = 1028,    --ignored                           
+						bonusRollCurrencies = {1580},
+					    maxKills = 1,bosses = { 
+								   {encounterId = 2210, questId = 52196},  -- Dunegorger Kraulok
+								   {encounterId = 2141, questId = 52169},  -- Ji'arak
+								   {encounterId = 2139, questId = 52181},  -- T'zane
+								   
+								   {encounterId = 2198, questId = 52166},  -- Warbringer Yenajz
+								   {encounterId = 2199, questId = 52163},  -- Azurethos, The Winged Typhoon
+								   {encounterId = 2197, questId = 52157},  -- Hailstone Construct
 	 				             }
 					   },
-					   {instanceId = 557,                                  -- Draenor 
-						bonusRollCurrencies = {1129, 994},
-					    maxKills = 4,                               
-					    bosses = { {encounterId = 1452, questId = 94015 }, -- Supreme Lord Kazzak
-						     	   {encounterId = 1262, questId = 37464 }, -- Rukhmar
-						 		   {encounterId = 1211, questId = 37462 }, -- Tarlna the Ageless
-								   {encounterId = 1291, questId = 37462 }  -- Drov the Ruiner
-	 				             }
-					   },
-					   {instanceId = 322,                                  -- Panderia
-						bonusRollCurrencies = {776, 752, 697},
-					    maxKills = 6,                              
-					    bosses = { {encounterId = 861},                    -- Ordos
-								   {name = L["The Celestials"]},           -- The Celestials 
-						     	   {encounterId = 826},                    -- Oondasta
-						 		   {encounterId = 814},                    -- Nalak
-								   {encounterId = 725},                    -- Salyisis's Warband
-								   {encounterId = 691}                     -- Sha of Anger
+					   {name = 'Arathi Highlands',
+					    instanceId = 1028,        --ignored                         
+						bonusRollCurrencies = {1580},
+					    maxKills = 1,bosses = { 
+								   {encounterId = arathiBossEncounterId, questId = arathiBossQuestID},  --  Doom's Howl (Alliance) / The Lion's Roar (Horde)
 	 				             }
 					   }
 }
 
 local HOLIDAY_BOSS = {}
 
-local CURRENCIES = {	{currencyId = 1273,														  -- Seal of Broken Fate
-						 weeklyMax = 3,
-						 quests = {	{questId = 43895, level = 1, cost = 1000},					  -- Sealing Fate: Gold
-							 		{questId = 43896, level = 2, cost = 2000},					  -- Sealing Fate: Piles of Gold
-									{questId = 43897, level = 3, cost = 4000},					  -- Sealing Fate: Immense Fortune of Gold
-									{questId = 43892, level = 1, cost = 1000, currencyId = 1220}, -- Sealing Fate: Order Resources
-									{questId = 43893, level = 2, cost = 2000, currencyId = 1220}, -- Sealing Fate: Stashed Order Resources
-									{questId = 43894, level = 3, cost = 4000, currencyId = 1220}, -- Sealing Fate: Extraneous Order Resources
-									{questId = 43510}											  -- Class Hall
+local CURRENCIES = {	{currencyId = 1580,														  -- Seal of Wartorn Fate
+						 weeklyMax = 2,
+						 quests = {	{questId = 52834, level = 1, cost = 2000},					  -- Sealing Fate: Gold
+							 		{questId = 52838, level = 2, cost = 5000},					  -- Sealing Fate: Piles of Gold
+									{questId = 52837, level = 1, cost = 250, currencyId = 1560}, -- Sealing Fate: War Resources
+									{questId = 52840, level = 2, cost = 500, currencyId = 1560}, -- Sealing Fate: Stashed War Resources
+									{questId = 52835, level = 1, cost = 10, currencyId = 52839}, -- Sealing Fate: War Resources
+									{questId = 52839, level = 2, cost = 25, currencyId = 52839}  -- Sealing Fate: Stashed War Resources
+
 								  }
 						},
-						{currencyId = 1220},													  -- Order Resources						 						
-						{currencyId = 1155}														  -- Ancient Mana
+						{currencyId = 1560}													  -- War Resources						 						
 }
 
 
@@ -100,7 +91,9 @@ for key, currency in pairs(CURRENCIES) do
 end
 
 for _, region in pairs(WORLD_BOSSES) do
-	region.name = EJ_GetInstanceInfo(region.instanceId)
+    if not region.name then
+	   region.name = EJ_GetInstanceInfo(region.instanceId)
+	end
 	for _, boss in pairs(region.bosses) do
 		if region.instanceId == 322 then
 			if not boss.name and boss.encounterId then
@@ -161,7 +154,7 @@ local defaults = {
 		},
 		characterOptions = {
 			levelRestriction = true,
-			minimumLevel = 100,
+			minimumLevel = 120,
 			removeInactive = true,
 			inactivityThreshold = 28,
 			include = 3,
@@ -296,7 +289,7 @@ local options = {
 							type = "range",
 							name = L["Minimum Level"],
 							desc = L["Show characters this level and higher."],
-							step = 1, min = 1, max = 110,
+							step = 1, min = 1, max = 120,
 							order = 2,
 							get = function(info)
 								return WorldBossStatus.db.global.characterOptions.minimumLevel

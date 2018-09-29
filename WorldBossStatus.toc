@@ -1,6 +1,6 @@
-## Interface: 70300
+## Interface: 80000
 ## Title: World Boss Status
-## Version:5.7
+## Version:5.8
 ## Author: Ludius of Caelestrasz-US
 ## Notes: World Boss Status keeps track of the world bosses that you have defeated and bonus roll currencies on all your characters.
 ## SavedVariables: WorldBossStatusDB
