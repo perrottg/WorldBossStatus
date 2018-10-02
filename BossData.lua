@@ -35,6 +35,10 @@ function GetBoss(encounterID, questID)
 	boss.name = EJ_GetEncounterInfo(encounterID)
 	boss.questId = questID
 	boss.displayName = boss.name
+	
+	if encounterID < 1460 then
+	  boss.active = true
+    end
 
 	return boss
 end
@@ -113,7 +117,7 @@ function AddPanderia()
 	category.bonusRollCurrencies = {776, 752, 697}
 	category.bosses = {
 		GetBoss(861),					-- Ordos
-		{ name = L["The Celestials"] },	-- The Celestials 
+		{ name = L["The Celestials"] , active = true },	-- The Celestials 
 		GetBoss(826),					-- Oondasta
 		GetBoss(814),					-- Nalak
 		GetBoss(725),					-- Salyisis's Warband
@@ -130,5 +134,6 @@ function WorldBossStatus:GetBossData()
 	AddDraenor()
 	AddPanderia()
 
+	 
 	return BOSS_DATA
 end

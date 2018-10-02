@@ -751,6 +751,7 @@ local function ShowKill(boss, kill, lastReset)
 		
 		rollTexture = "|T"..texture..":16|t"					
 	end
+	
 
 	if kill and (kill.KillTime == nil or kill.KillTime > lastReset) then	
 		--desc = string.lower(SecondsToTime(time() - kill.KillTime, false, true, 2).." ago")
@@ -758,11 +759,17 @@ local function ShowKill(boss, kill, lastReset)
 		color = red
 	end
 	
+
 	subTooltip:SetCell(line, 1, boss.name, nil, "LEFT")
 	subTooltip:SetCell(line, 2, desc, nil, "RIGHT")	
 	subTooltip:SetCell(line, 3, bossTexture, nil, "RIGHT", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCell(line, 4, rollTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCellTextColor(line, 2, color.r, color.g, color.b)
+	
+	if bossTexture == textures.bossAvailable and boss.active then
+		subTooltip:SetCellTextColor(line, 1, green.r, green.g, green.b)
+	end
+	
 end
 
 local function ShowBossKills(character, region)	
@@ -1151,6 +1158,8 @@ function WorldBossStatus:ShowToolTip()
 	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
 
 	WorldBossStatus.bossData = bossData
+	
+	WorldBossStatus:FlagQuestBosses()
 
 	local tooltip = WorldBossStatus.tooltip
 	local characterName = UnitName("player")
