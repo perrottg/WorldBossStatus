@@ -19,4 +19,4 @@ zhTW.lua
 
 WorldBossStatus.lua
 BossData.lua
-
+QuestData.lua
