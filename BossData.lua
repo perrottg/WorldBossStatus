@@ -43,14 +43,14 @@ function AddBfaBosses()
 	local bfaBosses = {}
 	local bosses = {}
 
-	bosses[1] = { name = EJ_GetEncounterInfo(2210), questId = 52196 } -- Dunegorger Kraulok
-	bosses[2] = { name = EJ_GetEncounterInfo(2141), questId = 52169 } -- Ji'arak
-	bosses[3] = { name = EJ_GetEncounterInfo(2139), questId = 52181 } -- T'zane
-	bosses[4] = { name = EJ_GetEncounterInfo(2198), questId = 52166 } -- Warbringer Yenajz
-	bosses[5] = { name = EJ_GetEncounterInfo(2199), questId = 52163 } -- Azurethos, The Winged Typhoon
-	bosses[6] = { name = EJ_GetEncounterInfo(2197), questId = 52157 } -- Hailstone Construct
-	bosses[7] = { name = EJ_GetEncounterInfo(2213), questId = 52847 } -- Doom's Howl (Alliance)
-	bosses[8] = { name = EJ_GetEncounterInfo(2212), questId = 52848 } -- The Lion's Roar (Horde)
+	bosses[1] = { name = EJ_GetEncounterInfo(2210), questId = 52196 }                       -- Dunegorger Kraulok
+	bosses[2] = { name = EJ_GetEncounterInfo(2141), questId = 52169 }                       -- Ji'arak
+	bosses[3] = { name = EJ_GetEncounterInfo(2139), questId = 52181 }                       -- T'zane
+	bosses[4] = { name = EJ_GetEncounterInfo(2198), questId = 52166 }                       -- Warbringer Yenajz
+	bosses[5] = { name = EJ_GetEncounterInfo(2199), questId = 52163 }                       -- Azurethos, The Winged Typhoon
+	bosses[6] = { name = EJ_GetEncounterInfo(2197), questId = 52157 }                       -- Hailstone Construct
+	bosses[7] = { name = EJ_GetEncounterInfo(2213), questId = 52847, faction = 'Alliance' } -- Doom's Howl (Alliance)
+	bosses[8] = { name = EJ_GetEncounterInfo(2212), questId = 52848, faction = 'Horde'    } -- The Lion's Roar (Horde)
 
 	bfaBosses.name = 'Zandalar/Kul Tiras'
 	bfaBosses.maxKills = 2

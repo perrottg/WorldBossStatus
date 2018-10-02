@@ -799,7 +799,9 @@ local function ShowBossKills(character, region)
 			kill = {}
 		end
 		
-		ShowKill(boss, kill, lastReset)
+		if not boss.faction or character.faction == boss.faction then
+		  ShowKill(boss, kill, lastReset)
+		end
 	end	
 
 	subTooltip:AddSeparator(6,0,0,0,0)
