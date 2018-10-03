@@ -1,7 +1,7 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("WorldBossStatus")
 local BOSS_DATA = {}
 
-function AddHolidayBosses()
+function AddHoliday()
 	local holidayBosses = nil
 	local bosses = {}
 
@@ -39,52 +39,52 @@ function GetBoss(encounterID, questID)
 	return boss
 end
 
-function AddBfaBosses()
-	local bfaBosses = {}
-	local bosses = {}
+function AddZandalarAndKulTiras()
+	local category = {}
 
-	bosses[1] = { name = EJ_GetEncounterInfo(2210), questId = 52196 } -- Dunegorger Kraulok
-	bosses[2] = { name = EJ_GetEncounterInfo(2141), questId = 52169 } -- Ji'arak
-	bosses[3] = { name = EJ_GetEncounterInfo(2139), questId = 52181 } -- T'zane
-	bosses[4] = { name = EJ_GetEncounterInfo(2198), questId = 52166 } -- Warbringer Yenajz
-	bosses[5] = { name = EJ_GetEncounterInfo(2199), questId = 52163 } -- Azurethos, The Winged Typhoon
-	bosses[6] = { name = EJ_GetEncounterInfo(2197), questId = 52157 } -- Hailstone Construct
-	bosses[7] = { name = EJ_GetEncounterInfo(2213), questId = 52847 } -- Doom's Howl (Alliance)
-	bosses[8] = { name = EJ_GetEncounterInfo(2212), questId = 52848 } -- The Lion's Roar (Horde)
+	category.name = 'Zandalar/Kul Tiras'
+	category.maxKills = 2
+	category.bosses = bosses
+	category.bonusRollCurrencies = {1580}
+	category.bosses = {
+		GetBoss(2210, 52196), -- Dunegorger Kraulok
+		GetBoss(2141, 52169), -- Ji'arak
+		GetBoss(2139, 52181), -- T'zane
+		GetBoss(2198, 52166), -- Warbringer Yenajz
+		GetBoss(2199, 52163), -- Azurethos, The Winged Typhoon
+		GetBoss(2197, 52157), -- Hailstone Construct
+		GetBoss(2213, 52847), -- Doom's Howl (Alliance)
+		GetBoss(2212, 52848)  -- The Lion's Roar (Horde)
+	}	
 
-	bfaBosses.name = 'Zandalar/Kul Tiras'
-	bfaBosses.maxKills = 2
-	bfaBosses.bosses = bosses
-	bfaBosses.bonusRollCurrencies = {1580}
-
-	BOSS_DATA[#BOSS_DATA +1] = bfaBosses
+	BOSS_DATA[#BOSS_DATA +1] = category
 end
 
 function AddBrokenIsles()
 	local category = {}
 	local bosses = {}
 
-	bosses[1] = { name = EJ_GetEncounterInfo(1790), questId = 43512 }  -- Ana-Mouz
-	bosses[2] = { name = EJ_GetEncounterInfo(1774), questId = 43193 }  -- Calamir
-	bosses[3] = { name = EJ_GetEncounterInfo(1789), questId = 43448 }  -- Drugon the Frostblood
-	bosses[4] = { name = EJ_GetEncounterInfo(1795), questId = 43985 }  -- Flotsam
-	bosses[5] = { name = EJ_GetEncounterInfo(1770), questId = 42819 }  -- Humongris 
-	bosses[6] = { name = EJ_GetEncounterInfo(1769), questId = 43192 }  -- Levantus
-	bosses[7] = { name = EJ_GetEncounterInfo(1783), questId = 43513 }  -- Na'zak the Fiend
-	bosses[8] = { name = EJ_GetEncounterInfo(1749), questId = 42270 }  -- Nithogg
-	bosses[9] = { name = EJ_GetEncounterInfo(1763), questId = 42779 }  -- Shar'thos
-	bosses[10] = { name = EJ_GetEncounterInfo(1756), questId = 42269 } -- The Soultakers
-	bosses[11] = { name = EJ_GetEncounterInfo(1796), questId = 44287 } -- Withered'Jim
-	bosses[12] = { name = EJ_GetEncounterInfo(1956), questId = 47061 } -- Apocron
-	bosses[13] = { name = EJ_GetEncounterInfo(1883), questId = 46947 } -- Brutallus
-	bosses[14] = { name = EJ_GetEncounterInfo(1884), questId = 46948 } -- Malificus
-	bosses[15] = { name = EJ_GetEncounterInfo(1885), questId = 46945 } -- Si'vash
-	bosses[16] = { name = 'Kosumoth', questId = 43798 }				   -- Kosumoth
-
-	category.name = EJ_GetInstanceInfo(822)							   -- Broken Isles
+	category.name = EJ_GetInstanceInfo(822) -- Broken Isles
 	category.maxKills = 1
-	category.bosses = bosses
 	category.bonusRollCurrencies = {1273}
+	category.bosses = {
+		GetBoss(1790, 43512), -- Ana-Mouz
+		GetBoss(1774, 43193), -- Calamir
+		GetBoss(1789, 43448), -- Drugon the Frostblood
+		GetBoss(1795, 43985), -- Flotsam
+		GetBoss(1770, 42819), -- Humongris 
+		GetBoss(1769, 43192), -- Levantus
+		GetBoss(1783, 43513), -- Na'zak the Fiend
+		GetBoss(1749, 42270), -- Nithogg
+		GetBoss(1763, 42779), -- Shar'thos
+		GetBoss(1756, 42269), -- The Soultakers
+		GetBoss(1796, 44287), -- Withered'Jim
+		GetBoss(1956, 47061), -- Apocron
+		GetBoss(1883, 46947), -- Brutallus
+		GetBoss(1884, 46948), -- Malificus
+		GetBoss(1885, 46945), -- Si'vash
+		{ name = 'Kosumoth', questId = 43798 } -- Kosumoth
+	}
 
 	BOSS_DATA[#BOSS_DATA +1] = category
 end
@@ -124,8 +124,10 @@ function AddPanderia()
 end
 
 function WorldBossStatus:GetBossData()
-	AddHolidayBosses()
-	AddBfaBosses()
+	BOSS_DATA = {}
+
+	AddHoliday()
+	AddZandalarAndKulTiras()
 	AddBrokenIsles()
 	AddDraenor()
 	AddPanderia()

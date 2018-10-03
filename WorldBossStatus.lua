@@ -579,48 +579,49 @@ local options = {
 
 --end
 
---function WorldBossStatus:GetActiveWorldBosses()
---	local bossData = WorldBossStatus.bossData
---	local questsFound = {}
---	local questsLocation = {}
---	local activeWorldBosses = {}
-	
+function WorldBossStatus:GetActiveWorldBosses()
+	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
+	local questsFound = {}
+	local questsLocation = {}
+	local activeWorldBosses = {}
+	local MAPID_STORMSONG_VALLEY = 942
+	local MAPID_DRUSTVAR = 896
+	local MAPID_TIRAGARDE_SOUND = 895
+	local MAPID_VOLDUN = 864
+	local MAPID_NAZMIR = 863
+	local MAPID_ZULDAZAR = 862
+	local MAPID_ARATHI_HIGHLANDS = 14
+	local zones = {MAPID_STORMSONG_VALLEY, MAPID_DRUSTVAR, MAPID_TIRAGARDE_SOUND, MAPID_ARATHI_HIGHLANDS, MAPID_VOLDUN, MAPID_NAZMIR, MAPID_ZULDAZAR}
 
+	--WorldBossStatus:Print("Looking for world quests....")
+	for zoneIndex = 1, #zones do
+		taskInfo = C_TaskQuest.GetQuestsForPlayerByMapID(zones[zoneIndex])
+		if taskInfo and #taskInfo then
+		   for taskIndex = 1, #taskInfo do
+			  questsFound[taskInfo[taskIndex].questId] = time()                      
+		   end
+		end
+	 end
 
+	--WorldBossStatus:Print("Matching categories....")
+	for _, category in pairs(bossData) do
+		--WorldBossStatus:Print("Matching bosses....")
+		for _, boss in pairs(category.bosses) do
+			if boss.questId then
+				--WorldBossStatus:Print("Matchng boss "..boss.name)
+				if questsFound[boss.questId] or (boss.questId and IsQuestFlaggedCompleted(boss.questId)) then
+					--WorldBossStatus:Print("Found match "..boss.name)
+					activeWorldBosses[boss.name] = time()
+				end
+				if questsLocation[boss.questId] then
+					boss.location = questsLocation[boss.questId]
+				end
+			end
+		end
+	end
 
---	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
---		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
-
---		if zoneDepth <= 1 then
---			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
-   
---			if questList then
---				for i = 1, #questList do      
---					timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questList[i].questId)               
---					tagId, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questList[i].questId);
---					questsFound[questList[i].questId] = time()
---					questsLocation[questList[i].questId] = zoneName
---				end
---			end
---		end
---	end
-
---	for _, category in pairs(bossData) do
---		for _, boss in pairs(category.bosses) do
-
---			if boss.questId then
---				if questsFound[boss.questId] or (boss.questId and IsQuestFlaggedCompleted(boss.questId)) then
---					activeWorldBosses[boss.name] = time()
---				end
---				if questsLocation[boss.questId] then
---					boss.location = questsLocation[boss.questId]
---				end
---			end
---		end
---	end
-
---	return activeWorldBosses
---end
+	return activeWorldBosses
+end
 
 local MyScanningTooltip = CreateFrame("GameTooltip", "MyScanningTooltip", UIParent, "GameTooltipTemplate")
 
@@ -767,7 +768,8 @@ end
 
 local function ShowBossKills(character, region)	
 	local subTooltip = WorldBossStatus.subTooltip
-	local lastReset = WorldBossStatus:GetWeeklyQuestResetTime() - 604800
+	local nextReset = WorldBossStatus:GetWeeklyQuestResetTime()
+	local lastReset = nextReset - 604800
 	local _, _, texture = GetCurrencyInfo(region.bonusRollCurrencies[1] or "")
 	local bonusRollTexture = "|T"..texture..":16|t"
 
@@ -795,7 +797,8 @@ local function ShowBossKills(character, region)
 		if character.worldBossKills then
 			kill = character.worldBossKills[boss.name]
 		end
-		if not kill and character.bossKills[boss.name] and character.bossKills[boss.name] > time() then
+		if not kill and character.bossKills[boss.name] and character.bossKills[boss.name] < nextReset then
+			--WorldBossStatus:Print("World Boss killed found for: "..boss.name, character.bossKills[boss.name], time())
 			kill = {}
 		end
 		
@@ -909,7 +912,8 @@ end
 
 function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 	local bossData = WorldBossStatus.bossData
-	local lastReset = WorldBossStatus:GetWeeklyQuestResetTime() - 604800
+	local nextReset = WorldBossStatus:GetWeeklyQuestResetTime()
+	local lastReset = nextReset - 604800
 	local tooltip = WorldBossStatus.tooltip
 	local line = tooltip:AddLine()
 	local factionIcon = ""
@@ -959,7 +963,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 			if characterInfo.worldBossKills then
 				kill = characterInfo.worldBossKills[boss.name]
 			end
-			if not kill and characterInfo.bossKills[boss.name] and characterInfo.bossKills[boss.name] > time() then
+			if not kill and characterInfo.bossKills[boss.name] and characterInfo.bossKills[boss.name] < nextReset then
 				kill = {}
 			end
 
@@ -1483,32 +1487,28 @@ function WorldBossStatus:OnEnable()
 	WorldBossStatus:DoEnable()	
 end
 
---local function CheckWorldBosses()
-	
+local function CheckWorldBosses()	
+	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
+	local activeBosses = WorldBossStatus:GetActiveWorldBosses()
 
---	local bossData = WorldBossStatus.bossData
---	local activeBosses = WorldBossStatus:GetActiveWorldBosses()
+	for _, category in pairs(bossData) do
+		for _, boss in pairs(category.bosses) do
+			if boss.questId and activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
+				local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
+				local bossname = colorise(boss.name, epic)
+				local text = ""
+				if boss.location then
+					text = format("A quest is available in %s for world boss %s! Go defeat it!", boss.location, bossname)
+				else
+					text = format("A quest is available for world boss %s! Go defeat it!", bossname)
+				end
+				WorldBossStatus:Print(text)
+			end
+			--WorldBossStatus:Print(boss.name)
+		end
+	end	
 
---	WorldBossStatus:Print("Checking for World Bosses...")
-
---	for _, category in pairs(bossData) do
---		for _, boss in pairs(category.bosses) do
---			if boss.questId and activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
---				local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
---				local bossname = colorise(boss.name, epic)
---				local text = ""
---				if boss.location then
---					text = format("A quest is available in %s for world boss %s! Go defeat it!", boss.location, bossname)
---				else
---					text = format("A quest is available for world boss %s! Go defeat it!", bossname)
---				end
---				WorldBossStatus:Print(text, 1, 1, 1)
---			end
---			WorldBossStatus:Print(boss.name)
---		end
---	end	
-
---end
+end
 
 
 function WorldBossStatus:DoEnable()
@@ -1522,7 +1522,7 @@ function WorldBossStatus:DoEnable()
 	self:RegisterEvent("PLAYER_LOGOUT")
 
 	WorldBossStatus:GetSinkAce3OptionsDataTable()
-	--WorldBossStatus:ScheduleTimer(CheckWorldBosses, 7)
+	WorldBossStatus:ScheduleTimer(CheckWorldBosses, 10)
 end
 
 function WorldBossStatus:OnDisable()
