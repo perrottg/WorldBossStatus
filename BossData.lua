@@ -30,10 +30,11 @@ function AddHoliday()
 	end
 end
 
-function GetBoss(encounterID, questID)
+function GetBoss(encounterID, questID, faction)
 	local boss = {}
 	boss.name = EJ_GetEncounterInfo(encounterID)
 	boss.questId = questID
+	boss.faction = faction
 	boss.displayName = boss.name
 
 	return boss
@@ -53,8 +54,8 @@ function AddZandalarAndKulTiras()
 		GetBoss(2198, 52166), -- Warbringer Yenajz
 		GetBoss(2199, 52163), -- Azurethos, The Winged Typhoon
 		GetBoss(2197, 52157), -- Hailstone Construct
-		GetBoss(2213, 52847), -- Doom's Howl (Alliance)
-		GetBoss(2212, 52848)  -- The Lion's Roar (Horde)
+		GetBoss(2213, 52847, 'Alliance'), -- Doom's Howl (Alliance)
+		GetBoss(2212, 52848, 'Horde')  -- The Lion's Roar (Horde)
 	}	
 
 	BOSS_DATA[#BOSS_DATA +1] = category

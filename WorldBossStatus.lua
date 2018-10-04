@@ -797,18 +797,18 @@ local function ShowBossKills(character, region)
 		if character.worldBossKills then
 			kill = character.worldBossKills[boss.name]
 		end
-		if not kill and character.bossKills[boss.name] and character.bossKills[boss.name] < nextReset then
-			--WorldBossStatus:Print("World Boss killed found for: "..boss.name, character.bossKills[boss.name], time())
+		if not kill and character.bossKills[boss.name] and character.bossKills[boss.name] < nextReset then			
 			kill = {}
 		end
 		
-		ShowKill(boss, kill, lastReset)
+		if not boss.faction or character.faction == boss.faction then
+			ShowKill(boss, kill, lastReset)
+		end
 	end	
 
 	subTooltip:AddSeparator(6,0,0,0,0)
 	line = subTooltip:AddLine()
 	subTooltip:SetCell(line, 1, format("Legend: %sDefeated  %s Bonus roll used", textures.bossDefeated, bonusRollTexture) , nil, LEFT, 3)
-
 
 	subTooltip:Show()
 end
