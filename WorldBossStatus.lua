@@ -3,7 +3,6 @@ WorldBossStatus = LibStub("AceAddon-3.0"):NewAddon("WorldBossStatus", "AceConsol
 
 local textures = {}
 
-
 textures.worldBossStatus = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_8.png"
 textures.alliance = "|TInterface\\FriendsFrame\\PlusManz-Alliance:18|t"
 textures.horde = "|TInterface\\FriendsFrame\\PlusManz-Horde:18|t"
@@ -552,77 +551,6 @@ local options = {
 	}
 }
 
---function WorldBossStatus.UpdateActiveWorldQuests()
---	local worldQuests = {}
-
---	for zoneIndex = 1, C_MapCanvas.GetNumZones(MAPID_BROKENISLES) do   
---		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(MAPID_BROKENISLES, zoneIndex);
-
---		if zoneDepth <= 1 then
---			local questList = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, MAPID_BROKENISLES)
-   
---			if questList then
---				for i = 1, #questList do  
---					local questId = questList[i].questId
---					local quest = {}
-
---					quest.questId = questId
---					quest.timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questId)
---					quest.zone = zoneName
---					quest.timeLeftMinutes = C_TaskQuest.GetQuestTimeLeftMinutes(questId)
-
---					worldQuests[quest.questId] = quest
---				end
---			end
---		end
---	end
-
---end
-
-function WorldBossStatus:GetActiveWorldBosses()
-	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
-	local questsFound = {}
-	local questsLocation = {}
-	local activeWorldBosses = {}
-	local MAPID_STORMSONG_VALLEY = 942
-	local MAPID_DRUSTVAR = 896
-	local MAPID_TIRAGARDE_SOUND = 895
-	local MAPID_VOLDUN = 864
-	local MAPID_NAZMIR = 863
-	local MAPID_ZULDAZAR = 862
-	local MAPID_ARATHI_HIGHLANDS = 14
-	local zones = {MAPID_STORMSONG_VALLEY, MAPID_DRUSTVAR, MAPID_TIRAGARDE_SOUND, MAPID_ARATHI_HIGHLANDS, MAPID_VOLDUN, MAPID_NAZMIR, MAPID_ZULDAZAR}
-
-	--WorldBossStatus:Print("Looking for world quests....")
-	for zoneIndex = 1, #zones do
-		taskInfo = C_TaskQuest.GetQuestsForPlayerByMapID(zones[zoneIndex])
-		if taskInfo and #taskInfo then
-		   for taskIndex = 1, #taskInfo do
-			  questsFound[taskInfo[taskIndex].questId] = time()                      
-		   end
-		end
-	 end
-
-	--WorldBossStatus:Print("Matching categories....")
-	for _, category in pairs(bossData) do
-		--WorldBossStatus:Print("Matching bosses....")
-		for _, boss in pairs(category.bosses) do
-			if boss.questId then
-				--WorldBossStatus:Print("Matchng boss "..boss.name)
-				if questsFound[boss.questId] or (boss.questId and IsQuestFlaggedCompleted(boss.questId)) then
-					--WorldBossStatus:Print("Found match "..boss.name)
-					activeWorldBosses[boss.name] = time()
-				end
-				if questsLocation[boss.questId] then
-					boss.location = questsLocation[boss.questId]
-				end
-			end
-		end
-	end
-
-	return activeWorldBosses
-end
-
 local MyScanningTooltip = CreateFrame("GameTooltip", "MyScanningTooltip", UIParent, "GameTooltipTemplate")
 
 local QuestTitleFromID = setmetatable({}, { __index = function(t, id)
@@ -735,41 +663,42 @@ local function CleanupCharacters()
 	
 end
 
-local function ShowKill(boss, kill, lastReset)
+local function ShowKill(boss, killed, killInfo)	
 	local subTooltip = WorldBossStatus.subTooltip
 	local line = subTooltip:AddLine()
 	local desc = ""
 	local color = gray
 	local bossTexture = textures.bossAvailable
 	local rollTexture = ""
-		
-	if kill and kill.KillTime then		
-		desc = string.lower(SecondsToTime(time() - kill.KillTime, false, true, 1).." ago")	
+	
+	if killInfo and killInfo.KillTime then		
+		desc = string.lower(SecondsToTime(time() - killInfo.KillTime, false, true, 1).." ago")	
 	end
 
-	if (kill and kill.bonusRollTime and kill.bonusRollTime > lastReset) then
-		local _, _, texture = GetCurrencyInfo(kill.bonusRollUsed or 1273)
-		
-		rollTexture = "|T"..texture..":16|t"					
-	end
-
-	if kill and (kill.KillTime == nil or kill.KillTime > lastReset) then	
-		--desc = string.lower(SecondsToTime(time() - kill.KillTime, false, true, 2).." ago")
+	if killed then 
 		bossTexture = textures.bossDefeated
 		color = red
+
+		if (killInfo and killInfo.bonusRollTime and killInfo.bonusRollTime == killInfo.killTime) then
+			local _, _, texture = GetCurrencyInfo(killInfo.bonusRollUsed or 1580)
+			
+			rollTexture = "|T"..texture..":16|t"					
+		end
+	elseif boss.active then
+		color = white
 	end
 	
 	subTooltip:SetCell(line, 1, boss.name, nil, "LEFT")
 	subTooltip:SetCell(line, 2, desc, nil, "RIGHT")	
 	subTooltip:SetCell(line, 3, bossTexture, nil, "RIGHT", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCell(line, 4, rollTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
+	subTooltip:SetCellTextColor(line, 1, color.r, color.g, color.b)
 	subTooltip:SetCellTextColor(line, 2, color.r, color.g, color.b)
 end
 
 local function ShowBossKills(character, region)	
 	local subTooltip = WorldBossStatus.subTooltip
-	local nextReset = WorldBossStatus:GetWeeklyQuestResetTime()
-	local lastReset = nextReset - 604800
+	local nextReset = WorldBossStatus:GetNextReset()
 	local _, _, texture = GetCurrencyInfo(region.bonusRollCurrencies[1] or "")
 	local bonusRollTexture = "|T"..texture..":16|t"
 
@@ -792,17 +721,15 @@ local function ShowBossKills(character, region)
 	subTooltip:SetCellTextColor(line, 1, yellow.r, yellow.g, yellow.b)
 
 	for _, boss in pairs(region.bosses) do
-		local kill = nil
-
-		if character.worldBossKills then
-			kill = character.worldBossKills[boss.name]
+		local killInfo = nil
+		local killed = (character.bossKills and boss.resetInterval and character.bossKills[boss.name] and character.bossKills[boss.name] == nextReset[boss.resetInterval])
+			
+		if character.worldBossKills and character.worldBossKills[boss.name] then
+			killInfo = character.worldBossKills[boss.name]
 		end
-		if not kill and character.bossKills[boss.name] and character.bossKills[boss.name] < nextReset then			
-			kill = {}
-		end
-		
+				
 		if not boss.faction or character.faction == boss.faction then
-			ShowKill(boss, kill, lastReset)
+			ShowKill(boss, killed, killInfo)
 		end
 	end	
 
@@ -813,91 +740,11 @@ local function ShowBossKills(character, region)
 	subTooltip:Show()
 end
 
-local function ShowBonusRolls(character, currency)	
-	local cost = nil
-	local currencyInfo = character.currencies[currency.currencyId]
-
-	if LibQTip:IsAcquired("WBSsubTooltip") and subTooltip then
-		LibQTip:Release(subTooltip)
-		subTooltip = nil		
-	end	
-
-	subTooltip = LibQTip:Acquire("WBSsubTooltip", 4, "LEFT", "RIGHT", "RIGHT")
-	subTooltip:ClearAllPoints()
-	subTooltip:SetClampedToScreen(true)
-	--subTooltip:SmartAnchorTo(WorldBossStatus.tooltip)
-
-	--subTooltip:SetPoint("LEFT", WorldBossStatus.tooltip, "RIGHT", 30, 0)
-	subTooltip:SetPoint("TOP", WorldBossStatus.tooltip, "TOP", 30, 0)
-	subTooltip:SetPoint("RIGHT", WorldBossStatus.tooltip, "LEFT", -20, 0)
-
-	
-
-
-	for _, quest in pairs (currency.quests) do
-		if not quest.name then
-			quest.name = QuestTitleFromID[quest.questId]
-		end
-	end
-
-	local reset = WorldBossStatus:GetWeeklyQuestResetTime() - time()
-
-	line = subTooltip:AddHeader()
-	subTooltip:SetCell(line, 1, "|T"..currency.texture..":0|t "..currency.name)
-	subTooltip:SetLineTextColor(line, yellow.r, yellow.g, yellow.b)
-	subTooltip:AddSeparator(6,0,0,0,0)
-	line = subTooltip:AddLine("Amount", currencyInfo.balance)
-	line = subTooltip:AddLine("Earned this week")
-	subTooltip:AddSeparator(3,0,0,0,0)
-	line = subTooltip:AddLine("Weekly maximum", currency.weeklyMax)
-	line = subTooltip:AddLine("Total maximum")
-	subTooltip:AddSeparator(6,0,0,0,0)
-
-	line = subTooltip:AddLine("Weekly Collection Quest", "Cost", "Status")
-	subTooltip:SetLineTextColor(line, yellow.r, yellow.g, yellow.b)
-	subTooltip:AddSeparator(3,0,0,0,0)
-
-
-	for _, quest in pairs (currency.quests) do
-
-		if quest.currencyId and quest.cost then
-			_, _, texture = GetCurrencyInfo(quest.currencyId)
-			cost = quest.cost.." |T"..texture..":0|t"
-		elseif quest.cost then
-			cost = quest.cost.." g"
-		else
-			cost = ""
-		end
-
-		if currencyInfo.collectionQuests and currencyInfo.collectionQuests[quest.questId] then
-			line = subTooltip:AddLine(quest.name, cost, "Collected")
-			subTooltip:SetLineTextColor(line, green.r, green.g, green.b)
-		elseif currencyInfo.collectedThisWeek and quest.level <= currencyInfo.collectedThisWeek then
-			line = subTooltip:AddLine(quest.name, cost, "Not available")
-			subTooltip:SetLineTextColor(line, gray.r, gray.g, gray.b)
-		else
-			line = subTooltip:AddLine(quest.name, cost, "Available")
-		end
-	end
-
-	subTooltip:AddSeparator(6,0,0,0,0)
-
-	line = subTooltip:AddLine("Quests will reset in "..SecondsToTime(reset, true, true, 2))
-
-	subTooltip:Show()
-end
-
-
-
 function WorldBossStatus:ShowSubTooltip(cell, info)	
 	if not info then
 		return
 	end
-	if info.type == "BOSSES" then
-		ShowBossKills(info.character, info.region)
-	elseif info.type == "BONUSROLLS" then
-		--ShowBonusRolls(info.character, info.currency)
-	end	
+	ShowBossKills(info.character, info.region)
 end
 
 local function HideSubTooltip()
@@ -911,9 +758,8 @@ local function HideSubTooltip()
 end
 
 function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
-	local bossData = WorldBossStatus.bossData
-	local nextReset = WorldBossStatus:GetWeeklyQuestResetTime()
-	local lastReset = nextReset - 604800
+	local bossData = WorldBossStatus:GetBossData()
+	local nextReset = WorldBossStatus:GetNextReset()
 	local tooltip = WorldBossStatus.tooltip
 	local line = tooltip:AddLine()
 	local factionIcon = ""
@@ -958,16 +804,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 		kills = 0
 
 		for _, boss in pairs(category.bosses) do
-			local kill = nil
-
-			if characterInfo.worldBossKills then
-				kill = characterInfo.worldBossKills[boss.name]
-			end
-			if not kill and characterInfo.bossKills[boss.name] and characterInfo.bossKills[boss.name] < nextReset then
-				kill = {}
-			end
-
-			if kill and (kill.KillTime == nil or kill.KillTime > lastReset) then	
+			if characterInfo.bossKills[boss.name] and characterInfo.bossKills[boss.name] == nextReset[boss.resetInterval] then
 				kills = kills + 1
 			end
 		end
@@ -979,7 +816,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 		end
 
 		tooltip:SetCellScript(line, column, "OnEnter", function(self)
-			local info = { type="BOSSES", character=characterInfo, region=category}
+			local info = { character=characterInfo, region=category}
 			WorldBossStatus:ShowSubTooltip(self, info)
 		end)
 
@@ -1053,7 +890,7 @@ function WorldBossStatus:OnInitialize()
 end
 
 local function ShowHeader(tooltip, marker, headerName)
-	local bossData = WorldBossStatus.bossData
+	local bossData = WorldBossStatus:GetBossData()
 
 	line = tooltip:AddHeader()
 
@@ -1150,10 +987,7 @@ function RealmOnClick(cell, realmName)
 end
 
 function WorldBossStatus:ShowToolTip()
-	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
-
-	WorldBossStatus.bossData = bossData
-
+	local bossData = WorldBossStatus:GetBossData()
 	local tooltip = WorldBossStatus.tooltip
 	local characterName = UnitName("player")
 	local bossKills = WorldBossStatus:GetWorldBossKills()
@@ -1209,7 +1043,7 @@ function WorldBossStatus:ShowToolTip()
 	end
 
 	tooltip:AddSeparator(3,0,0,0,0)
-	local reset = WorldBossStatus:GetWeeklyQuestResetTime() - time()
+	local reset = WorldBossStatus:GetNextReset()[2] - time()
 	line = tooltip:AddLine(" ")
 	tooltip:SetCell(tooltip:GetLineCount(), 1, L["World bosses will reset in"] .. " "..SecondsToTime(reset, true, true, 2), nil, "LEFT", tooltip:GetColumnCount())
 	if (frame) then
@@ -1289,7 +1123,7 @@ function WorldBossStatus:GetBonusRollsStatus()
 		currencyInfo.balance = balance
 		currencyInfo.weeklyMax = weeklyMax
 		currencyInfo.totalMax = totalMax
-		currencyInfo.questReset = WorldBossStatus:GetWeeklyQuestResetTime()					
+		currencyInfo.questReset = WorldBossStatus:GetNextReset()[2]				
 		currencies[currency.currencyId] = currencyInfo		
 	end
 	
@@ -1300,38 +1134,23 @@ function WorldBossStatus:GetRegion()
 
 
 end
-
-function WorldBossStatus:GetWeeklyQuestResetTime()
-   local now = time()
-   local region = GetCurrentRegion()
-   local dayOffset = { 2, 1, 0, 6, 5, 4, 3 }
-   local regionDayOffset = {{ 2, 1, 0, 6, 5, 4, 3 }, { 4, 3, 2, 1, 0, 6, 5 }, { 3, 2, 1, 0, 6, 5, 4 }, { 4, 3, 2, 1, 0, 6, 5 }, { 4, 3, 2, 1, 0, 6, 5 } }
-   local nextDailyReset = GetQuestResetTime()
-   local utc = date("!*t", now + nextDailyReset)      
-   local reset = regionDayOffset[region][utc.wday] * 86400 + nextDailyReset
-   
-   return time() + reset  
-end
  
 function WorldBossStatus:GetWorldBossKills()
-	local bossData = WorldBossStatus.bossData
 	local bossKills = {}
-	local expires = WorldBossStatus:GetWeeklyQuestResetTime()
+	local bossData = WorldBossStatus:GetBossData()	
+	local nextReset = WorldBossStatus:GetNextReset()
 
 	for i = 1, GetNumSavedWorldBosses() do
 		local name, worldBossID, reset = GetSavedWorldBossInfo(i)
-		local expires = time() + reset
 
-		bossKills[name] = expires		
+		bossKills[name] = time() + reset		
 	end
 
 	for _, category in pairs(bossData) do
-		category.kills = 0
 		for _, boss in pairs(category.bosses) do
-			if boss.questId and boss.name and IsQuestFlaggedCompleted(boss.questId) then
-				bossKills[boss.name] =  expires
-			elseif boss.dungeonID and GetLFGDungeonRewards(boss.dungeonID) then
-				bossKills[boss.name] =  time() + GetQuestResetTime()
+			if (boss.questId and IsQuestFlaggedCompleted(boss.questId)) or 
+				(boss.dungeonID and GetLFGDungeonRewards(boss.dungeonID)) then
+				bossKills[boss.name] =  nextReset[boss.resetInterval]
 			end
 		end
 	end
@@ -1372,7 +1191,7 @@ function WorldBossStatus:LFG_UPDATE_RANDOM_INFO()
 end
 
 function WorldBossStatus:GetBossInfo(instance, name, questID)
-	local bossData = WorldBossStatus.bossData
+	local bossData = WorldBossStatus:GetBossData()
 	local bossInfo = nil
 	
 	for _, category in pairs(bossData) do
@@ -1410,7 +1229,6 @@ function WorldBossStatus:BossKilled(boss)
 end
 
 function WorldBossStatus:BonusRollUsed()
-	local now = time()
 	local bonusRollStatus = WorldBossStatus.BonusRollStatus
 
 	if bonusRollStatus then
@@ -1421,7 +1239,7 @@ function WorldBossStatus:BonusRollUsed()
 		local bossKill = characterInfo.worldBossKills[bonusRollStatus.lastBossKilled] or {}
 
 		bossKill.bonusRollUsed = bonusRollStatus.currencyID
-		bossKill.bonusRollTime = now
+		bossKill.bonusRollTime = bossKill.killTime or time()
 		
 		characterInfo.worldBossKills[bonusRollStatus.lastBossKilled] = bossKill
 		WorldBossStatus:SaveCharacterInfo(characterInfo)	
@@ -1474,7 +1292,6 @@ function WorldBossStatus:QUEST_TURNED_IN(event, questID)
 	end
 end
 
-
 function WorldBossStatus:UpdateWorldBossKills()	
 	RequestRaidInfo();		
 end
@@ -1488,26 +1305,25 @@ function WorldBossStatus:OnEnable()
 end
 
 local function CheckWorldBosses()	
-	local bossData = WorldBossStatus.bossData or WorldBossStatus:GetBossData()
-	local activeBosses = WorldBossStatus:GetActiveWorldBosses()
+	local bossData = WorldBossStatus:GetBossData()
 
 	for _, category in pairs(bossData) do
-		for _, boss in pairs(category.bosses) do
-			if boss.questId and activeBosses[boss.name] and not IsQuestFlaggedCompleted(boss.questId) then 
-				local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
-				local bossname = colorise(boss.name, epic)
-				local text = ""
-				if boss.location then
-					text = format("A quest is available in %s for world boss %s! Go defeat it!", boss.location, bossname)
-				else
-					text = format("A quest is available for world boss %s! Go defeat it!", bossname)
+		if not category.legacy then
+			for _, boss in pairs(category.bosses) do
+				if boss.questId and boss.active and not IsQuestFlaggedCompleted(boss.questId) then 
+					local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.questId)
+					local bossname = colorise(boss.name, epic)
+					local text = ""
+					if timeLeft then
+						text = format("A quest is available for world boss %s! You have %s to defeat it!", bossname, SecondsToTime(timeLeft * 60, true, true, 2))
+					else
+						text = format("A quest is available for world boss %s! Go defeat it!", bossname)
+					end
+					WorldBossStatus:Print(text)
 				end
-				WorldBossStatus:Print(text)
 			end
-			--WorldBossStatus:Print(boss.name)
 		end
-	end	
-
+	end
 end
 
 
