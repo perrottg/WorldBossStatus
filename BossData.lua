@@ -2,10 +2,22 @@ local L = LibStub("AceLocale-3.0"):GetLocale("WorldBossStatus")
 local BOSS_DATA = nil
 local resetIntervals = { daily = 1, weekly = 2, unknown = 3 }
 
+function GetWeeklyQuestResetTime()
+	local now = time()
+	local region = GetCurrentRegion()
+	local dayOffset = { 2, 1, 0, 6, 5, 4, 3 }
+	local regionDayOffset = {{ 2, 1, 0, 6, 5, 4, 3 }, { 4, 3, 2, 1, 0, 6, 5 }, { 3, 2, 1, 0, 6, 5, 4 }, { 4, 3, 2, 1, 0, 6, 5 }, { 4, 3, 2, 1, 0, 6, 5 } }
+	local nextDailyReset = GetQuestResetTime()
+	local utc = date("!*t", now + nextDailyReset)      
+	local reset = regionDayOffset[region][utc.wday] * 86400 + now + nextDailyReset
+	
+	return reset  
+ end
 
 function FlagActiveBosses()
 	local bossData = BOSS_DATA
 	local worldQuests = {}
+	local lastSeen = WorldBossStatus.db.global.lastSeen or {}
    
 	for _, category in pairs(bossData) do	
 		local zones = category.maps or {}
@@ -20,26 +32,50 @@ function FlagActiveBosses()
 		end
 		
 		for _, boss in pairs(category.bosses) do
-			if boss.questId then
+			if category.expansion < 6 then
+				boss.active = true
+			elseif boss.questId then
 				if worldQuests[boss.questId] or IsQuestFlaggedCompleted(boss.questId) then
 					boss.active = true				
+					lastSeen[boss.name] = time()
+				elseif boss.resetInterval == resetIntervals.weekly then
+					boss.active = lastSeen[boss.name] and lastSeen[boss.name] > (GetWeeklyQuestResetTime() - 604800)
 				end
 			end
 		end
 	end
+
+	WorldBossStatus.db.global.lastSeen = lastSeen
 end
 
-function GetWeeklyQuestResetTime()
-	local now = time()
-	local region = GetCurrentRegion()
-	local dayOffset = { 2, 1, 0, 6, 5, 4, 3 }
-	local regionDayOffset = {{ 2, 1, 0, 6, 5, 4, 3 }, { 4, 3, 2, 1, 0, 6, 5 }, { 3, 2, 1, 0, 6, 5, 4 }, { 4, 3, 2, 1, 0, 6, 5 }, { 4, 3, 2, 1, 0, 6, 5 } }
-	local nextDailyReset = GetQuestResetTime()
-	local utc = date("!*t", now + nextDailyReset)      
-	local reset = regionDayOffset[region][utc.wday] * 86400 + now + nextDailyReset
+
+
+
+ function GetBoss(encounterID, questID, mapID, drops, resetInterval, faction)
+	local boss = {}
+
+	if not resetInterval then resetInterval = resetIntervals.weekly end
+
 	
-	return reset  
- end
+
+	boss.name = EJ_GetEncounterInfo(encounterID)
+	boss.questId = questID
+	boss.drops = drops
+	boss.resetInterval = resetInterval
+	boss.faction = faction
+	boss.displayName = boss.name
+
+	_, boss.name = EJ_GetCreatureInfo(1, encounterID)
+
+	if (mapID) then
+		local mapInfo = C_Map.GetMapInfo(mapID)
+		if mapInfo then 
+			boss.location = mapInfo.name 
+		end
+	end
+
+	return boss
+end
 
 function AddHoliday()
 	local holidayBosses = nil
@@ -62,7 +98,6 @@ function AddHoliday()
 
 	if #bosses > 0 then
 		holidayBosses = {}
-		holidayBosses.category = 'Holiday'
 		holidayBosses.name = 'Holiday'
 		holidayBosses.maxKills = #bosses	
 		holidayBosses.bosses = bosses
@@ -72,26 +107,13 @@ function AddHoliday()
 	end
 end
 
-function GetBoss(encounterID, questID, resetInterval, faction)
-	local boss = {}
-
-	if not resetInterval then resetInterval = resetIntervals.weekly end
-
-	boss.name = EJ_GetEncounterInfo(encounterID)
-	boss.questId = questID
-	boss.resetInterval = resetInterval
-	boss.faction = faction
-	boss.displayName = boss.name
-
-	return boss
-end
-
 function AddZandalarAndKulTiras()
 	local category = {}
 
-	category.name = 'Zandalar/Kul Tiras'
+	category.name = _G["EXPANSION_NAME7"]
+	category.title = category.name.." "..L["Bosses"]
+	category.expansion = 7
 	category.maxKills = 2
-	category.bosses = bosses
 	category.bonusRollCurrencies = {1580}
 	category.maps = {
 		942, -- STORMSONG_VALLEY,
@@ -103,24 +125,33 @@ function AddZandalarAndKulTiras()
 		14   -- ARATHI_HIGHLANDS 
 	}
 	category.bosses = {
-		GetBoss(2210, 52196), -- Dunegorger Kraulok
-		GetBoss(2141, 52169), -- Ji'arak
-		GetBoss(2139, 52181), -- T'zane
-		GetBoss(2198, 52166), -- Warbringer Yenajz
-		GetBoss(2199, 52163), -- Azurethos, The Winged Typhoon
-		GetBoss(2197, 52157), -- Hailstone Construct
-		GetBoss(2213, 52847, resetIntervals.unknown, 'Alliance'), -- Doom's Howl (Alliance)
-		GetBoss(2212, 52848, resetIntervals.unknown, 'Horde')  -- The Lion's Roar (Horde)
+		GetBoss(2210, 52196, 864, { gear = 355 }), -- Dunegorger Kraulok
+		GetBoss(2141, 52169, 862, { gear = 355 } ), -- Ji'arak
+		GetBoss(2139, 52181, 863, { gear = 355 }), -- T'zane
+		GetBoss(2198, 52166, 942, { gear = 355 }), -- Warbringer Yenajz
+		GetBoss(2199, 52163, 895, { gear = 355 }), -- Azurethos, The Winged Typhoon
+		GetBoss(2197, 52157, 896, { gear = 355 }), -- Hailstone Construct
+		GetBoss(2213, 52847, 14, { gear = 370, toy = true }, resetIntervals.unknown, 'Alliance'), -- Doom's Howl (Alliance)
+		GetBoss(2212, 52848, 14, { gear = 370, toy = true }, resetIntervals.unknown, 'Horde')  -- The Lion's Roar (Horde)
 	}	
+	category.showLocations = true 
+	category.showDrops = true
 
-	BOSS_DATA[#BOSS_DATA +1] = category
+	if GetAccountExpansionLevel() >= category.expansion and 
+		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
+		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
+		BOSS_DATA[#BOSS_DATA +1] = category
+	end
 end
 
 function AddBrokenIsles()
 	local category = {}
 	local bosses = {}
 
-	category.name = EJ_GetInstanceInfo(822) -- Broken Isles
+	--category.name = EJ_GetInstanceInfo(822) -- Broken Isles
+	category.name = _G["EXPANSION_NAME6"]
+	category.title = category.name.." "..L["Bosses"]
+	category.expansion = 6
 	category.maxKills = 1
 	category.bonusRollCurrencies = {1273}
 	category.legacy = true
@@ -138,11 +169,11 @@ function AddBrokenIsles()
 		885, -- ANTORANWASTES
 		830, -- KROKUUN
 		882, -- MACAREE
-		62, --  DARKSHORE
-		947 -- AZEROTH	
+		62,  -- DARKSHORE
+		947  -- AZEROTH	
 	}
 	category.bosses = {
-		GetBoss(1790, 43512), -- Ana-Mouz
+		GetBoss(1790, 43512, 680, { gear = 172 }), -- Ana-Mouz
 		GetBoss(1774, 43193), -- Calamir
 		GetBoss(1789, 43448), -- Drugon the Frostblood
 		GetBoss(1795, 43985), -- Flotsam
@@ -160,13 +191,19 @@ function AddBrokenIsles()
 		{ name = 'Kosumoth', questId = 43798, resetInterval = resetIntervals.weekly } -- Kosumoth
 	}
 
-	BOSS_DATA[#BOSS_DATA +1] = category
+	if GetAccountExpansionLevel() >= category.expansion and 
+		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
+		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
+		BOSS_DATA[#BOSS_DATA +1] = category
+	end
 end
 
 function AddDraenor()
 	local category = {}
 
 	category.name = EJ_GetInstanceInfo(557)	-- Draenor 
+	category.title = category.name.." "..L["Bosses"]
+	category.expansion = 5
 	category.maxKills = 4
 	category.bonusRollCurrencies = {1129, 994}
 	category.legacy = true
@@ -177,26 +214,38 @@ function AddDraenor()
 		GetBoss(1291, 37462)	-- Drov the Ruiner
 	}
 	
-	BOSS_DATA[#BOSS_DATA +1] = category
+	if GetAccountExpansionLevel() >= category.expansion and 
+		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
+		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
+		BOSS_DATA[#BOSS_DATA +1] = category
+	end
 end
 
 function AddPanderia()
 	local category = {}
+	local mapInfo = C_Map.GetMapInfo(554)
 
 	category.name = EJ_GetInstanceInfo(322)	-- Panderia
+	category.title = category.name.." "..L["Bosses"]
+	category.expansion = 4
 	category.maxKills = 6
 	category.bonusRollCurrencies = {776, 752, 697}
 	category.legacy = true
 	category.bosses = {
-		GetBoss(861),					-- Ordos
-		{ name = L["The Celestials"], resetInterval = resetIntervals.weekly },	-- The Celestials 
-		GetBoss(826),					-- Oondasta
-		GetBoss(814),					-- Nalak
-		GetBoss(725),					-- Salyisis's Warband
-		GetBoss(691)					-- Sha of Anger
+		GetBoss(861, nil, 554),			-- Ordos
+		{ name = L["The Celestials"], displayName = L["The Celestials"], resetInterval = resetIntervals.weekly, location = mapInfo.name },	-- The Celestials 
+		GetBoss(826, nil, 507),			-- Oondasta
+		GetBoss(814, nil, 504),			-- Nalak
+		GetBoss(725, nil, 376),			-- Salyisis's Warband
+		GetBoss(691, nil, 379)			-- Sha of Anger
 	}
+	category.showLocations = true 
 	
-	BOSS_DATA[#BOSS_DATA +1] = category
+	if GetAccountExpansionLevel() >= category.expansion and 
+		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
+		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
+		BOSS_DATA[#BOSS_DATA +1] = category
+	end
 end
 
 function WorldBossStatus:GetNextReset()

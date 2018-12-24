@@ -10,11 +10,25 @@ textures.bossDefeated = "|TInterface\\WorldMap\\Skull_64Red:18|t"
 textures.bossStatus = "|TInterface\\WorldMap\\Skull_64Red:18|t"
 textures.bossAvailable = "|TInterface\\WorldMap\\Skull_64Grey:18|t"
 textures.quest = "|TInterface\\Minimap\\OBJECTICONS:20:20:0:0:256:192:32:64:20:48|t"
+textures.toy = "|TInterface\\Icons\\INV_Misc_Toy_03:18|t"
+textures.mount = "|TInterface\\Icons\\Ability_mount_ridinghorse:18|t"
+textures.pet = "|TInterface\\Icons\\INV_Box_PetCarrier_01:18|t"
+textures.gear = "|TInterface\\Icons\\INV_Helmet_25:18|t"
+--textures.bonusRoll = "|TInterface\\Icons\\INV_Misc_CuriousCoin:18|t"
+--textures.bonusRoll = "|TInterface\\Icons\\Ability_TitanKeeper_CleansingOrb:16:16|t"
+textures.bonusRoll = "|TInterface\\BUTTONS\\UI-GroupLoot-Dice-Up:16:16|t"
 
 local addonName = "WordBossStatus";
 local LDB = LibStub("LibDataBroker-1.1", true)
 local LDBIcon = LDB and LibStub("LibDBIcon-1.0", true)
 local LibQTip = LibStub('LibQTip-1.0')
+
+local colors = {
+	rare = { r = 0, g = 0.44, b = 0.87},
+	epic = { r = 0.63921568627451, g = 0.2078431372549, b = 0.93333333333333 },
+	white = { r = 1.0, g = 1.0, b = 1.0 },
+	yellow = { r = 1.0, g = 1.0, b = 0.2 }
+}
 
 local red = { r = 1.0, g = 0.2, b = 0.2 }
 local blue = { r = 0.4, g = 0.4, b = 1.0 }
@@ -43,38 +57,7 @@ local CURRENCIES = {	{currencyId = 1580,														  -- Seal of Wartorn Fate
 
 local MAPID_BROKENISLES = 1007
 local isInitialized = false
-	 
-						   
-for key, currency in pairs(CURRENCIES) do
-	if not currency.name and currency.currencyId then
-		currency.name, _, currency.texture = GetCurrencyInfo(currency.currencyId)	
-	end
-end
-				 						   
-local function colorise(s, color)
-	if color and s then
-		return format("|cff%02x%02x%02x%s|r", (color.r or 1) * 255, (color.g or 1) * 255, (color.b or 1) * 255, s)
-	else
-		return s
-	end
-end
 
-local WorldBossStatusLauncher = LDB:NewDataObject(addonName, {
-		type = "data source",
-		text = L["World Boss Status"],
-		label = "WorldBossStatus",
-		tocname = "WorldBossStatus",
-			--"launcher",
-		icon = textures.worldBossStatus,
-		OnClick = function(clickedframe, button)
-			WorldBossStatus:ShowOptions() 
-		end,
-		OnEnter = function(self)
-			frame = self
-			WorldBossStatus:ShowToolTip()
-		end,
-	})
-	
 local defaults = {
 	realm = {
 		characters = {
@@ -112,444 +95,42 @@ local defaults = {
 			trackLegacyCurrencies = false,
 		},
 	},
-};
-
-local options = {
-    handler = WorldBossStatus,
-    type = "group",
-    args = {
-		features = {
-			handler = WorldBossStatus,
-			type = 'group',
-			name = L["General Options"],
-			desc = "",
-			order = 10,
-			args = {			
-				displayOptions = {
-					type = 'group',
-					inline = true,
-					name = L["Display Options"],
-					desc = "",
-					order = 1,
-					args = {	
-						showMiniMapButton = {
-							type = "toggle",
-							name = L["Minimap Button"],
-							desc = L["Toggles the display of the minimap button."],
-							get = "IsShowMinimapButton",
-							set = "ToggleMinimapButton",
-							order=1,
-						},
-						--showHintLine = {
-						--	type = "toggle",
-						--	name = L["Hint Line"],
-						--	desc = L["Toggles the display of the hint line."],
-						--	get = function(info)
-						--			return WorldBossStatus.db.global.displayOptions.showHintLine
-						--		  end,
-						--	set = function(info, value)
-						--			WorldBossStatus.db.global.displayOptions.showHintLine = value
-						--		  end,
-						--	order = 2,
-						--},
-					},
-				},
-				
-			},
-		},
-		characterOptions = {
-			handler = WorldBossStatus,
-			type = 'group',
-			name = L["Character Options"],
-			desc = "",
-			order = 20,
-			args = {	
-				inlcudeCharactersOptions = {
-					type = 'group',
-					inline = true,
-					name = L["Show Characters"],
-					desc = "",
-					order = 1,
-					args = {					
-						realmOption = {
-							type = "toggle",
-							name = L["On this realm"],
-							desc = L["Show characters on this realm."],
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.include == 2
-							end,
-							set = function(info, value)
-								if value then 
-									WorldBossStatus.db.global.characterOptions.include = 2
-								else
-									WorldBossStatus.db.global.characterOptions.include = 1
-								end
-							end,
-							order=1,
-						},
-						accountOption = {
-							type = "toggle",
-							name = L["On this account"],
-							desc = L["Show characters on this WoW account."],
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.include == 3
-							end,
-							set = function(info, value)
-								if value then 
-									WorldBossStatus.db.global.characterOptions.include = 3
-								else
-									WorldBossStatus.db.global.characterOptions.include = 1
-								end
-							end,
-							order=2,
-						},
-					},
-				},
-				characterLevelOptions = {
-					type= "group",
-					inline = true,
-					name = L["Level Restriction"],
-					desc = "",
-					order=5,
-					args = {
-						enableLevelRestriction = {
-							type = "toggle",
-							name = L["Enable"],
-							desc = L["Enable level restriction."],
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.levelRestriction
-							end,
-							set = function(info, value)
-								WorldBossStatus.db.global.characterOptions.levelRestriction = value
-							end,
-							order=1,
-						},
-						minimumLevelOption = {
-							type = "range",
-							name = L["Minimum Level"],
-							desc = L["Show characters this level and higher."],
-							step = 1, min = 1, max = 120,
-							order = 2,
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.minimumLevel
-							end,
-							set = function(info, value)
-								WorldBossStatus.db.global.characterOptions.minimumLevel = value
-							end,
-							disabled = function()
-								return not WorldBossStatus.db.global.characterOptions.levelRestriction
-							end,
-						},
-					},
- 				},
-				hideInactiveOptions = {
-					type= "group",
-					inline = true,
-					name = L["Hide Inactive Characters"],
-					desc = "",
-					order=6,
-					args = {
-						purgeInactiveCharacters = {
-							type = "toggle",
-							name = L["Enable"],
-							desc = L["Enable hiding inactive characters."],
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.removeInactive
-							end,
-							set = function(info, value)
-								WorldBossStatus.db.global.characterOptions.removeInactive = value
-							end,
-							order=1,
-						},
-						inactivityThresholdOption = {
-							type = "range",
-							name = L["Inactivity Threshold (days)"],
-							desc = L["Hide characters that have been inactive for this many days."],
-							step = 1, min = 14, max = 42,
-							order = 2,
-							get = function(info)
-								return WorldBossStatus.db.global.characterOptions.inactivityThreshold
-							end,
-							set = function(info, value)
-								WorldBossStatus.db.global.characterOptions.inactivityThreshold = value
-							end,
-							disabled = function()
-								return not WorldBossStatus.db.global.characterOptions.removeInactive
-							end,
-						},
-					},
-				},
-				trackedCharactersOption = {
-					type = "group",
-					inline = true,
-					name = L["Remove Tracked Characters"],
-					desc = "",
-					order = 7,
-					args = {
-						realmSelect = {
-							type = "select",
-							name = L["Realm"],
-							desc = L["Select a realm to remove a tracked character from."],
-							order = 1,
-							values = function()
-										local realmList = {}
-
-										for realm in pairs(WorldBossStatus.db.global.realms) do
-											realmList[realm] = realm
-										end
-
-										return realmList
-									 end,
-							get = function(info)
-									return selectedRealm
-								  end,
-							set = function(info, value)
-									selectedRealm = value
-									selectedCharacter = nil
-								  end,
-						},
-						characterSelect = {
-							type = "select",
-							name = L["Character"],
-							desc = L["Select the tracked character to remove."],
-							order = 2,
-							disabled = function()
-										  return selectedRealm == nil
-									   end,
-							values = function()
-										local list = {}
-										local realmInfo = WorldBossStatus.db.global.realms[selectedRealm]
-										if realmInfo then
-											local characters = realmInfo.characters
-	
-											for key,value in pairs(characters) do
-												list[key] = key
-											end
-										end
-										return list
-									 end,
-							get = function(info)
-									return selectedCharacter
-								  end,
-							set = function(info, value)
-									selectedCharacter = value
-								  end,
-						},
-						removeAction = {
-							type = "execute",							
-							name = L["Remove"],
-							desc = L["Click to remove the selected tracked character."],
-							order = 3,
-							disabled = function()
-										  return selectedRealm == nil or selectedCharacter == nil
-									   end,
-							func = function()
-
-								local realmInfo = WorldBossStatus.db.global.realms[selectedRealm]
-								local characterInfo = realmInfo.characters[selectedCharacter]
-								local count = 0
-
-								if not realmInfo then
-									return
-								end
-
-								if characterInfo then 
-									realmInfo.characters[selectedCharacter] = nil								
-								end
-								
-								for key,value in pairs(realmInfo.characters) do 
-									count = count + 1
-								end
-								
-								if count == 0 then 
-									WorldBossStatus.db.global.realms[selectedRealm] = nil
-								end
-							end,
-						},
-					},
-				},
-			}		
-		},
-		bossTracking = {
-			type = "group",
-			name = L["Boss Options"],
-			handler = WorldBossStatus,
-			desc = "",
-			order = 30,
-			args = {
-				trackHoldidayBosses = {
-					type = "toggle",
-					name = L["Track holiday bosses"],
-					desc = L["Automatically track holiday bosses during world events."],
-					get = function(info)
-						return not WorldBossStatus.db.global.bossOptions.disableHoldidayBossTracking
-					end,
-					set = function(info, value)
-						WorldBossStatus.db.global.bossOptions.disableHoldidayBossTracking = not value
-					end,
-					order=1,
-				},
-				trackedBosses = {
-					type = "multiselect",
-					name = L["Tracked Bosses"],
-					desc = L["Select the world bosses you would like to track."],
-					width = "full",
-					values = "GetBossOptions",
-					--get = function(info, key)
-					--		return not WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name]
-					--	end,
-					--set = function(info, key, value)
-					--		WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name] = not value
-					--end,
-					--get = function(info, key)
-					--		return not WorldBossStatus.db.global.bossOptions.hideBoss[WORLD_BOSSES[key].name]
-					--	end,
-					--set = function(info, key, value)
-					--		WorldBossStatus.db.global.bossOptions.hideBoss[WORLD_BOSSES[key].name] = not value
-					--end,
-					order=2
-				},
-				--trackLegacyBosses = {
-				--	type = "toggle",
-				--	name = L["Track legacy bosses"],
-				--	desc = L["Enable tracking of older legacy world bosses."],
-				--	get = function(info)
-				--		return WorldBossStatus.db.global.bossOptions.trackLegacyBosses
-				--	end,
-				--	set = function(info, value)
-				--		WorldBossStatus.db.global.bossOptions.trackLegacyBosses = value
-				--	end,
-				--	order=3,
-				--},
-				--trackedLegacyBosses = {
-				--	type = "multiselect",
-				--	name = L["Tracked Legacy Bosses"],
-				--	desc = L["Select the legacy world bosses you would like to track."],
-				--	width = "full",
-				--	values = "GetLegacyWorldBossOptions",
-				--	get = function(info, key)
-				--			return not WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name]
-				--		end,
-				--	set = function(info, key, value)
-				--			WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name] = not value
-				--	end,
-				--	disabled = function()
-				--		return not WorldBossStatus.db.global.bossOptions.trackLegacyBosses
-				--	end,
-				--	order=4
-				--},
-			}
-		}--,
-		--worldBossTracking = {
-		--	type = "group",
-		--	name = L["World Boss Options"],
-		--	handler = WorldBossStatus,
-		--	desc = "",
-		--	order = 30,
-		--	args = {
-		--		trackHoldidayBosses = {
-		--			type = "toggle",
-		--			name = L["Track holiday bosses"],
-		--			desc = L["Automatically track holiday bosses during world events."],
-		--			get = function(info)
-		--				return not WorldBossStatus.db.global.bossOptions.disableHoldidayBossTracking
-		--			end,
-		--			set = function(info, value)
-		--				WorldBossStatus.db.global.bossOptions.disableHoldidayBossTracking = not value
-		--			end,
-		--			order=1,
-		--		},
-		--		--trackedWorldBosses = {
-		--		--	type = "multiselect",
-		--		--	name = L["Tracked World Bosses"],
-		--		--	desc = L["Select the world bosses you would like to track."],
-		--		--	width = "full",
-		--		--	values = "GetWorldBossOptions",
-		--		--	--get = function(info, key)
-		--		--	--		return not WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name]
-		--		--	--	end,
-		--		--	--set = function(info, key, value)
-		--		--	--		WorldBossStatus.db.global.bossOptions.hideBoss[WOD_WORLD_BOSSES[key].name] = not value
-		--		--	--end,
-		--		--	--get = function(info, key)
-		--		--	--		return not WorldBossStatus.db.global.bossOptions.hideBoss[WORLD_BOSSES[key].name]
-		--		--	--	end,
-		--		--	--set = function(info, key, value)
-		--		--	--		WorldBossStatus.db.global.bossOptions.hideBoss[WORLD_BOSSES[key].name] = not value
-		--		--	--end,
-		--		--	order=2
-		--		--},
-		--	}
-		--}--,
---		bonusRollTracking = {
---			type = "group",
---			--inline = true,
---			handler = WorldBossStatus,
---			name = L["Bonus Roll Options"],
---			desc = "",
---			order = 40,
---			args = {
---				trackQuests = {
---					type = "toggle",
---					name = L["Track weekly quests"],
---					desc = L["Enable tracking the weekly 'Sealing Fate' quests."],
---					width = "full",
---					get = function(info)
---							return WorldBossStatus.db.global.bonusRollOptions.trackWeeklyQuests
---						end,
---					set = function(info, value)
---							WorldBossStatus.db.global.bonusRollOptions.trackWeeklyQuests = value
---						end,
---					order=1,
---				},
-----				trackedCurrencies = {
-----					type = "multiselect",
-----					name = L["Tracked Currencies"],
-----					desc = L["Select the currencies you would like to track."],
-----					width = "full",
-----					--values = "GetCurrencyOptions",
-----					--get = function(info, key)
-----					--		return WorldBossStatus.db.global.bonusRollOptions.trackedCurrencies[trackableCurrencies[key].id]
-----					--	end,
-----					--set = function(info, key, value)
-----					--		WorldBossStatus.db.global.bonusRollOptions.trackedCurrencies[trackableCurrencies[key].id] = value
-----					--end,
-----					order=2,
-----				},
-
-----				trackLegacyCurrency = {
-----					type = "toggle",
-----					name = L["Track legacy currencies"],
-----					desc = L["Enable tracking of older legacy bonus roll currencies."],
-----					--get = function(info)
-----					--	return WorldBossStatus.db.global.bonusRollOptions.trackLegacyCurrencies
-----					--end,
-----					--set = function(info, value)
-----					--	WorldBossStatus.db.global.bonusRollOptions.trackLegacyCurrencies = value
-----					--end,
-----					order=3,
-----				},
-----				trackedLegacyCurrencies = {
-----					type = "multiselect",
-----					name = L["Tracked Legacy Currencies"],
-----					desc = L["Select the legacy currencies you would like to track."],
-----					width = "full",
-----					--values = "GetLegacyCurrencyOptions",
-----					--get = function(info, key)
-----					--		return WorldBossStatus.db.global.bonusRollOptions.trackedCurrencies[trackableCurrencies[key].id]
-----					--	end,
-----					--set = function(info, key, value)
-----					--		WorldBossStatus.db.global.bonusRollOptions.trackedCurrencies[trackableCurrencies[key].id] = value
-----					--end,
-----					--disabled = function()
-----					--	return not WorldBossStatus.db.global.bonusRollOptions.trackLegacyCurrencies
-----					--end,
-----					order=4,
-----				},
---			}			
---		}
-	}
 }
+
+						   
+for key, currency in pairs(CURRENCIES) do
+	if not currency.name and currency.currencyId then
+		currency.name, _, currency.texture = GetCurrencyInfo(currency.currencyId)	
+	end
+end
+				 						   
+local function colorise(s, color)
+	if color and s then
+		return format("|cff%02x%02x%02x%s|r", (color.r or 1) * 255, (color.g or 1) * 255, (color.b or 1) * 255, s)
+	else
+		return s
+	end
+end
+
+local WorldBossStatusLauncher = LDB:NewDataObject(addonName, {
+		type = "data source",
+		text = L["World Boss Status"],
+		label = "WorldBossStatus",
+		tocname = "WorldBossStatus",
+			--"launcher",
+		icon = textures.worldBossStatus,
+		OnClick = function(clickedframe, button)
+			WorldBossStatus:ShowOptions() 
+		end,
+		OnEnter = function(self)
+			frame = self
+			WorldBossStatus:ShowToolTip()
+		end,
+	})
+	
+
+
+
 
 local MyScanningTooltip = CreateFrame("GameTooltip", "MyScanningTooltip", UIParent, "GameTooltipTemplate")
 
@@ -564,89 +145,17 @@ local QuestTitleFromID = setmetatable({}, { __index = function(t, id)
 	end
 end })
 
-function WorldBossStatus:GetCurrencyOptions()
---    local itemsList = {}
-	
---    for key,value in pairs(trackableCurrencies) do
---		if not value.legacy then
---			 itemsList[key] = "|T"..value.texture..":14:14:0:0:64:64:4:60:4:60|t "..value.name
---		end
---    end
-
---    return itemsList
-end
-
-function WorldBossStatus:GetLegacyCurrencyOptions()
---    local itemsList = {}
-	
---    for key,value in pairs(trackableCurrencies) do
---		if (value.legacy) then
---			itemsList[key] = "|T"..value.texture..":14:14:0:0:64:64:4:60:4:60|t "..value.name
---		end
---    end
-
---    return itemsList
-end
-
-function WorldBossStatus:GetBossOptions()
-	local itemsList = {}
-	
-    for key,value in pairs(WOD_WORLD_BOSSES) do
-		if not value.legacy then
-			itemsList[key] = value.name
-			WorldBossStatus:Print(key .. " = " .. value.name)				
-		end
-    end
-
-	--for key, value in pairs(WORLD_BOSSES) do
-	--	itemList[key] = value.name
-	--	WorldBossStatus:Print(key .. " = " .. value.name)	
-	--end
-
-    return itemsList
-end
-
-function WorldBossStatus:GetWorldBossOptions()
-	local itemsList = {}
-	
-  --  for key,value in pairs(WOD_WORLD_BOSSES) do
-		--if not value.legacy then
-		--	itemsList[key] = value.name
-		--	WorldBossStatus:Print(key .. " = " .. value.name)				
-		--end
-  --  end
-
-	for key, value in pairs(WORLD_BOSSES) do
-		itemList[key] = value.name
-		WorldBossStatus:Print(key .. " = " .. value.name)	
-	end
-
-    return itemsList
-end
-
-function WorldBossStatus:GetLegacyWorldBossOptions()
-	local itemsList = {}
-	
-    for key,value in pairs(WOD_WORLD_BOSSES) do
-		if value.legacy then
-			itemsList[key] = value.name
-		end
-    end
-
-    return itemsList
-
-end
-
 local function CleanupCharacters()
-	local threshold = WorldBossStatus.db.global.characterOptions.inactivityThreshold * (24 * 60 * 60)	
+	local options = WorldBossStatus:GetGlobalOptions()
+	local threshold = options.characterOptions.inactivityThreshold * (24 * 60 * 60)	
 	
-	if not WorldBossStatus.db.global.characterOptions.removeInactive or threshold == 0 then
+	if options.characterOptions.removeInactive or threshold == 0 then
 		return
 	 end
 	
 
-	for realm in pairs(WorldBossStatus.db.global.realms) do
-		local realmInfo = self.db.global.realms[realm]
+	for realm in pairs(options.realms) do
+		local realmInfo = options.realms[realm]
 		local characters = nil
 		
 		if realmInfo then
@@ -663,13 +172,14 @@ local function CleanupCharacters()
 	
 end
 
-local function ShowKill(boss, killed, killInfo)	
+local function ShowKill(boss, killed, killInfo, showLocation, showDrop)	
 	local subTooltip = WorldBossStatus.subTooltip
 	local line = subTooltip:AddLine()
 	local desc = ""
 	local color = gray
 	local bossTexture = textures.bossAvailable
 	local rollTexture = ""
+	local dropTexture = ""
 	
 	if killInfo and killInfo.KillTime then		
 		desc = string.lower(SecondsToTime(time() - killInfo.KillTime, false, true, 1).." ago")	
@@ -679,33 +189,83 @@ local function ShowKill(boss, killed, killInfo)
 		bossTexture = textures.bossDefeated
 		color = red
 
-		if (killInfo and killInfo.bonusRollTime and killInfo.bonusRollTime == killInfo.killTime) then
-			local _, _, texture = GetCurrencyInfo(killInfo.bonusRollUsed or 1580)
+		
+
+		if (killInfo and killInfo.bonusRollTime and killInfo.KillTime and killInfo.bonusRollTime >= killInfo.KillTime) then
 			
-			rollTexture = "|T"..texture..":16|t"					
+			--local _, _, texture = GetCurrencyInfo(killInfo.bonusRollUsed or 1580)
+			
+			--rollTexture = "|T"..texture..":16|t"					
+			rollTexture = textures.bonusRoll
 		end
+		--rollTexture = textures.bonusRoll
 	elseif boss.active then
 		color = white
 	end
 	
-	subTooltip:SetCell(line, 1, boss.name, nil, "LEFT")
-	subTooltip:SetCell(line, 2, desc, nil, "RIGHT")	
-	subTooltip:SetCell(line, 3, bossTexture, nil, "RIGHT", nil, nil, nil, nil, 20, 0)
-	subTooltip:SetCell(line, 4, rollTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
+	if boss.drops then	
+		if boss.drops.gear then
+			local levelColor = colors.rare
+
+			if boss.drops.gear > 300 then
+				levelColor = colors.epic
+			end
+			dropTexture = dropTexture.." "..textures.gear..colorise(boss.drops.gear,levelColor)
+			
+		end	
+		if boss.drops.mount then
+			dropTexture = dropTexture.." "..textures.mount
+		end
+		if boss.drops.pet then
+			dropTexture = dropTexture.." "..textures.pet		
+		end	
+		if boss.drops.toy then
+			dropTexture = dropTexture.." "..textures.toy
+		end			
+	end
+
+	subTooltip:SetCell(line, 1, boss.displayName or boss.name, nil, "LEFT")
+	if showLocation then
+		subTooltip:SetCell(line, 2, boss.location or '', nil, "LEFT")
+	end
+	subTooltip:SetCell(line, 3, desc, nil, "RIGHT")	
+	--if showDrop then
+	--	subTooltip:SetCell(line, 3, dropTexture, nil, "LEFT") --, nil, nil, nil, nil, 20, 0)
+	--end
+	subTooltip:SetCell(line, 4, bossTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
+	subTooltip:SetCell(line, 5, rollTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCellTextColor(line, 1, color.r, color.g, color.b)
 	subTooltip:SetCellTextColor(line, 2, color.r, color.g, color.b)
+	subTooltip:SetCellTextColor(line, 3, color.r, color.g, color.b)
 end
 
 local function ShowBossKills(character, region)	
 	local subTooltip = WorldBossStatus.subTooltip
 	local nextReset = WorldBossStatus:GetNextReset()
-	local _, _, texture = GetCurrencyInfo(region.bonusRollCurrencies[1] or "")
-	local bonusRollTexture = "|T"..texture..":16|t"
+	local texture = ""
+	local footer = ""
+	local bonusRollTexture = "|T"..textures.bonusRoll..":16|t"
+	local bonusRollCurrencies = region.bonusRollCurrencies
+	local locationHeader = nil
+	local dropColumnHeader = nil
+
+	if region.showLocations then
+		locationHeader = colorise('Location', colors.yellow)		
+	end
+
+	if region.showDrops then
+		dropsHeader = colorise('Drops', colors.yellow)
+	end
+
+	if bonusRollCurrencies and #bonusRollCurrencies >= 1 then
+		_, _, texture = GetCurrencyInfo(bonusRollCurrencies[1])
+		bonusRollTexture = "|T"..texture..":16|t"
+	end
 
 	if LibQTip:IsAcquired("WBSsubTooltip") and subTooltip then
 		subTooltip:Clear()
 	else 
-		subTooltip = LibQTip:Acquire("WBSsubTooltip", 4, "LEFT", "RIGHT", "CENTER", "CENTER")
+		subTooltip = LibQTip:Acquire("WBSsubTooltip", 5, "LEFT", "LEFT", "LEFT", "RIGHT", "CENTER", "CENTER")
 		WorldBossStatus.subTooltip = subTooltip	
 	end	
 
@@ -714,11 +274,12 @@ local function ShowBossKills(character, region)
 	subTooltip:SetPoint("TOP", WorldBossStatus.tooltip, "TOP", 30, 0)
 	subTooltip:SetPoint("RIGHT", WorldBossStatus.tooltip, "LEFT", -20, 0)
 
-	line = subTooltip:AddHeader()	
+	line = subTooltip:AddHeader(colorise(region.title, colors.yellow))	
 	subTooltip:AddSeparator(6,0,0,0,0)
 
-	subTooltip:SetCell(line, 1, region.name.." "..L["Bosses"])
-	subTooltip:SetCellTextColor(line, 1, yellow.r, yellow.g, yellow.b)
+	line = subTooltip:AddLine(colorise('NPC', colors.yellow), locationHeader, nil, colorise('Status',colors.yellow))
+	subTooltip:AddSeparator(1, 1, 1, 1, 1.0)
+	subTooltip:AddSeparator(3,0,0,0,0)
 
 	for _, boss in pairs(region.bosses) do
 		local killInfo = nil
@@ -729,22 +290,25 @@ local function ShowBossKills(character, region)
 		end
 				
 		if not boss.faction or character.faction == boss.faction then
-			ShowKill(boss, killed, killInfo)
+			ShowKill(boss, killed, killInfo, region.showLocations, region.showDrops)
 		end
 	end	
 
 	subTooltip:AddSeparator(6,0,0,0,0)
 	line = subTooltip:AddLine()
-	subTooltip:SetCell(line, 1, format("Legend: %sDefeated  %s Bonus roll used", textures.bossDefeated, bonusRollTexture) , nil, LEFT, 3)
+
+	footer = format("Legend: %sDefeated  %sBonus roll used", textures.bossDefeated, textures.bonusRoll)
+
+	--if region.bonusRollCurrencies then
+	--	footer = format("Legend: %sDefeated  %sBonus roll used", textures.bossDefeated, textures.bonusRoll)
+	--	
+	--else
+	--	footer = format("Legend: % sDefeated", textures.bossDefeated)
+	--end
+
+	subTooltip:SetCell(line, 1, footer , nil, LEFT, 3)
 
 	subTooltip:Show()
-end
-
-function WorldBossStatus:ShowSubTooltip(cell, info)	
-	if not info then
-		return
-	end
-	ShowBossKills(info.character, info.region)
 end
 
 local function HideSubTooltip()
@@ -755,6 +319,13 @@ local function HideSubTooltip()
 	end
 	GameTooltip:Hide()
 	WorldBossStatus.subTooltip = subTooltip
+end
+
+function WorldBossStatus:ShowSubTooltip(cell, info)
+	local character = info.character
+	local category = info.region
+
+	ShowBossKills(character, category)
 end
 
 function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
@@ -852,39 +423,25 @@ function WorldBossStatus:ToggleMinimapButton(info, value)
 	LDBIcon:Refresh(addonName)
 end
 
-function WorldBossStatus:ShowOptions()
-	InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-	InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-end
+--function WorldBossStatus:ShowOptions()
+--	InterfaceOptionsFrame_OpenToCategory(WorldBossStatus.optionsFrame)
+--	InterfaceOptionsFrame_OpenToCategory(WorldBossStatus.OptionsFrame)
+--end
+
+
 
 function WorldBossStatus:OnInitialize()	
 	self.db = LibStub("AceDB-3.0"):New("WorldBossStatusDB", defaults, true)
-	WorldBossStatus.debug = false
+	WorldBossStatus.debug = self.db.global.debug
 
 	LDBIcon:Register(addonName, WorldBossStatusLauncher, self.db.global.MinimapButton)
 
-	local wbscfg = LibStub("AceConfig-3.0")
-	wbscfg:RegisterOptionsTable("World Boss Status", options)
-	wbscfg:RegisterOptionsTable("World Boss Status Features", options.args.features)
-	wbscfg:RegisterOptionsTable("World Boss Status Characters", options.args.characterOptions)
-	--wbscfg:RegisterOptionsTable("World Boss Status Bosses", options.args.bossTracking)
-	--wbscfg:RegisterOptionsTable("World Boss Status World Bosses", options.args.worldBossTracking)
-	--wbscfg:RegisterOptionsTable("World Boss Status Bonus Rolls", options.args.bonusRollTracking)
+
+	WorldBossStatus:InitializeOptions()
 
 
-	local wbsdia = LibStub("AceConfigDialog-3.0")
-
-	self.optionsFrame =  wbsdia:AddToBlizOptions("World Boss Status Features", L["World Boss Status"])
-	wbsdia:AddToBlizOptions("World Boss Status Characters", L["Characters"], L["World Boss Status"])
-	--wbsdia:AddToBlizOptions("World Boss Status Bosses", L["Bosses"], L["World Boss Status"])
-	--wbsdia:AddToBlizOptions("World Boss Status World Bosses", L["World Bosses"], L["World Boss Status"])
-	--wbsdia:AddToBlizOptions("World Boss Status Bonus Rolls", L["Bonus Rolls"], L["World Boss Status"])
-
-	--self:SetSinkStorage(self.db)
-
-	self:RegisterChatCommand("wbs", "ChatCommand")
+    self:RegisterChatCommand("wbs", "ChatCommand")
 	self:RegisterChatCommand("worldbossstatus", "ChatCommand")
-
 
 	RequestRaidInfo()
 end
@@ -987,7 +544,7 @@ function RealmOnClick(cell, realmName)
 end
 
 function WorldBossStatus:ShowToolTip()
-	local bossData = WorldBossStatus:GetBossData()
+	local bossData = WorldBossStatus:GetBossData(true)
 	local tooltip = WorldBossStatus.tooltip
 	local characterName = UnitName("player")
 	local bossKills = WorldBossStatus:GetWorldBossKills()
@@ -1174,6 +731,8 @@ function WorldBossStatus:ChatCommand(input)
 	else
 		WorldBossStatus:Print("Unknown command: " .. command)
 	end
+
+	WorldBossStatus.db.global.debug = WorldBossStatus.bebug
 end
 
 function WorldBossStatus:UPDATE_INSTANCE_INFO()
@@ -1342,9 +901,9 @@ function WorldBossStatus:DoEnable()
 end
 
 function WorldBossStatus:OnDisable()
-	Self:UnregisterEvent("UPDATE_INSTANCE_INFO")
-	Self:UnregisterEvent("LFG_UPDATE_RANDOM_INFO")
-	Self:UnregisterEvent("LFG_COMPLETION_REWARD")
+	self:UnregisterEvent("UPDATE_INSTANCE_INFO")
+	self:UnregisterEvent("LFG_UPDATE_RANDOM_INFO")
+	self:UnregisterEvent("LFG_COMPLETION_REWARD")
 	self:UnregisterEvent("BONUS_ROLL_RESULT")
 	self:UnregisterEvent("BONUS_ROLL_ACTIVATE")
 	self:UnregisterEvent("BOSS_KILL")

@@ -64,6 +64,12 @@ L["Enable tracking of older legacy world bosses."] = true
 L["Tracked Legacy Bosses"] = true
 L["Select the legacy world bosses you would like to track."] = true
 
+--Rares Options
+L["Rares"] = true
+L["Rare Options"] = true
+L["Track rares"] = true
+L["Enable tracking of rares."] = true
+
 --World Boss Options
 L["World Bosses"] = true
 L["World Boss Options"] = true

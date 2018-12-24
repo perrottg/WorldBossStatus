@@ -166,6 +166,9 @@
     <Content Include="Libs\LibSink-2.0\LibSink-2.0.lua">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="Options.lua">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="ruRU.lua">
       <SubType>Code</SubType>
     </Content>
