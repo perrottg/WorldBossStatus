@@ -189,16 +189,11 @@ local function ShowKill(boss, killed, killInfo, showLocation, showDrop)
 		bossTexture = textures.bossDefeated
 		color = red
 
-		
-
-		if (killInfo and killInfo.bonusRollTime and killInfo.KillTime and killInfo.bonusRollTime >= killInfo.KillTime) then
-			
-			--local _, _, texture = GetCurrencyInfo(killInfo.bonusRollUsed or 1580)
-			
-			--rollTexture = "|T"..texture..":16|t"					
-			rollTexture = textures.bonusRoll
+		if (boss.bonusRollQuestID and IsQuestFlaggedCompleted(boss.bonusRollQuestID)) or
+			(killInfo and killInfo.bonusRollTime and killInfo.KillTime and killInfo.bonusRollTime >= killInfo.KillTime) then
+			-- bonus oll was used			
+			rollTexture = textures.bonusRoll			
 		end
-		--rollTexture = textures.bonusRoll
 	elseif boss.active then
 		color = white
 	end
@@ -244,8 +239,6 @@ local function ShowBossKills(character, region)
 	local nextReset = WorldBossStatus:GetNextReset()
 	local texture = ""
 	local footer = ""
-	local bonusRollTexture = "|T"..textures.bonusRoll..":16|t"
-	local bonusRollCurrencies = region.bonusRollCurrencies
 	local locationHeader = nil
 	local dropColumnHeader = nil
 
@@ -255,11 +248,6 @@ local function ShowBossKills(character, region)
 
 	if region.showDrops then
 		dropsHeader = colorise('Drops', colors.yellow)
-	end
-
-	if bonusRollCurrencies and #bonusRollCurrencies >= 1 then
-		_, _, texture = GetCurrencyInfo(bonusRollCurrencies[1])
-		bonusRollTexture = "|T"..texture..":16|t"
 	end
 
 	if LibQTip:IsAcquired("WBSsubTooltip") and subTooltip then
@@ -298,13 +286,6 @@ local function ShowBossKills(character, region)
 	line = subTooltip:AddLine()
 
 	footer = format("Legend: %sDefeated  %sBonus roll used", textures.bossDefeated, textures.bonusRoll)
-
-	--if region.bonusRollCurrencies then
-	--	footer = format("Legend: %sDefeated  %sBonus roll used", textures.bossDefeated, textures.bonusRoll)
-	--	
-	--else
-	--	footer = format("Legend: % sDefeated", textures.bossDefeated)
-	--end
 
 	subTooltip:SetCell(line, 1, footer , nil, LEFT, 3)
 

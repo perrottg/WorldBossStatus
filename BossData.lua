@@ -51,7 +51,7 @@ end
 
 
 
- function GetBoss(encounterID, questID, mapID, drops, resetInterval, faction)
+ function GetBoss(encounterID, questID, mapID, bonusRollQuestID, drops, resetInterval, faction)
 	local boss = {}
 
 	if not resetInterval then resetInterval = resetIntervals.weekly end
@@ -60,6 +60,7 @@ end
 
 	boss.name = EJ_GetEncounterInfo(encounterID)
 	boss.questId = questID
+	boss.bonusRollQuestID = bonusRollQuestID
 	boss.drops = drops
 	boss.resetInterval = resetInterval
 	boss.faction = faction
@@ -114,7 +115,6 @@ function AddZandalarAndKulTiras()
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 7
 	category.maxKills = 2
-	category.bonusRollCurrencies = {1580}
 	category.maps = {
 		942, -- STORMSONG_VALLEY,
 		896, -- DRUSTVAR
@@ -125,14 +125,14 @@ function AddZandalarAndKulTiras()
 		14   -- ARATHI_HIGHLANDS 
 	}
 	category.bosses = {
-		GetBoss(2210, 52196, 864, { gear = 355 }), -- Dunegorger Kraulok
-		GetBoss(2141, 52169, 862, { gear = 355 } ), -- Ji'arak
-		GetBoss(2139, 52181, 863, { gear = 355 }), -- T'zane
-		GetBoss(2198, 52166, 942, { gear = 355 }), -- Warbringer Yenajz
-		GetBoss(2199, 52163, 895, { gear = 355 }), -- Azurethos, The Winged Typhoon
-		GetBoss(2197, 52157, 896, { gear = 355 }), -- Hailstone Construct
-		GetBoss(2213, 52847, 14, { gear = 370, toy = true }, resetIntervals.unknown, 'Alliance'), -- Doom's Howl (Alliance)
-		GetBoss(2212, 52848, 14, { gear = 370, toy = true }, resetIntervals.unknown, 'Horde')  -- The Lion's Roar (Horde)
+		GetBoss(2210, 52196, 864, nil, { gear = 355 }), -- Dunegorger Kraulok
+		GetBoss(2141, 52169, 862, nil, { gear = 355 } ), -- Ji'arak
+		GetBoss(2139, 52181, 863, nil, { gear = 355 }), -- T'zane
+		GetBoss(2198, 52166, 942, nil, { gear = 355 }), -- Warbringer Yenajz
+		GetBoss(2199, 52163, 895, nil, { gear = 355 }), -- Azurethos, The Winged Typhoon
+		GetBoss(2197, 52157, 896, nil, { gear = 355 }), -- Hailstone Construct
+		GetBoss(2213, 52847, 14, 52273, { gear = 370, toy = true }, resetIntervals.unknown, 'Alliance'), -- Doom's Howl (Alliance)
+		GetBoss(2212, 52848, 14, 52274, { gear = 370, toy = true }, resetIntervals.unknown, 'Horde')  -- The Lion's Roar (Horde)
 	}	
 	category.showLocations = true 
 	category.showDrops = true
@@ -153,7 +153,6 @@ function AddBrokenIsles()
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 6
 	category.maxKills = 1
-	category.bonusRollCurrencies = {1273}
 	category.legacy = true
 	category.maps = {
 		619, -- BROKENISLES
@@ -173,7 +172,7 @@ function AddBrokenIsles()
 		947  -- AZEROTH	
 	}
 	category.bosses = {
-		GetBoss(1790, 43512, 680, { gear = 172 }), -- Ana-Mouz
+		GetBoss(1790, 43512, 680, nil, { gear = 172 }), -- Ana-Mouz
 		GetBoss(1774, 43193), -- Calamir
 		GetBoss(1789, 43448), -- Drugon the Frostblood
 		GetBoss(1795, 43985), -- Flotsam
@@ -205,7 +204,6 @@ function AddDraenor()
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 5
 	category.maxKills = 4
-	category.bonusRollCurrencies = {1129, 994}
 	category.legacy = true
 	category.bosses = {
 		GetBoss(1452, 94015),	-- Supreme Lord Kazzak
@@ -229,7 +227,6 @@ function AddPanderia()
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 4
 	category.maxKills = 6
-	category.bonusRollCurrencies = {776, 752, 697}
 	category.legacy = true
 	category.bosses = {
 		GetBoss(861, nil, 554),			-- Ordos
