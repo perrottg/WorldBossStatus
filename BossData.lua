@@ -1,5 +1,4 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("WorldBossStatus")
-local BOSS_DATA = nil
 local resetIntervals = { daily = 1, weekly = 2, unknown = 3 }
 
 function GetWeeklyQuestResetTime()
@@ -14,67 +13,133 @@ function GetWeeklyQuestResetTime()
 	return reset  
  end
 
-function FlagActiveBosses()
-	local bossData = BOSS_DATA
-	local worldQuests = {}
-	local lastSeen = WorldBossStatus.db.global.lastSeen or {}
-   
-	for _, category in pairs(bossData) do	
-		local zones = category.maps or {}
+ function WorldBossStatus:GetLastSeenData(crowdTrackingOnly)
+	local lastSeenData = {}
+	local bossData = self:GetBossData()
 
-		for zoneIndex = 1, #zones do
-			local taskInfo = C_TaskQuest.GetQuestsForPlayerByMapID(zones[zoneIndex])
-			if taskInfo and #taskInfo then
-			   for taskIndex = 1, #taskInfo do
-					worldQuests[taskInfo[taskIndex].questId] = time()                      
-			   end
+	for _, category in pairs(bossData) do		
+		for _, boss in pairs(category.bosses) do
+			if boss.lastSeen and (boss.crowdTracking or not crowdTrackingOnly) then
+				lastSeenData[boss.index] = boss.lastSeen
 			end
 		end
-		
+	end
+
+	return lastSeenData
+ end
+
+ function WorldBossStatus:UpdateLastSeenData(newLastSeenData)
+	local lastSeenData = {}
+	local bossData = WorldBossStatus:GetBossData()
+	local updateCount = 0
+
+	for _, category in pairs(bossData) do		
 		for _, boss in pairs(category.bosses) do
-			if category.expansion < 6 then
-				boss.active = true
-			elseif boss.questId then
-				if worldQuests[boss.questId] or IsQuestFlaggedCompleted(boss.questId) then
-					boss.active = true				
-					lastSeen[boss.name] = time()
-				elseif boss.resetInterval == resetIntervals.weekly then
-					boss.active = lastSeen[boss.name] and lastSeen[boss.name] > (GetWeeklyQuestResetTime() - 604800)
+			if newLastSeenData[boss.index] then
+				if not boss.lastSeen or newLastSeenData[boss.index] > boss.lastSeen then
+					boss.lastSeen = newLastSeenData[boss.index]
+					updateCount = updateCount + 1
 				end
 			end
+			if boss.lastSeen then
+				lastSeenData[boss.index] = boss.lastSeen
+			end
 		end
 	end
 
-	WorldBossStatus.db.global.lastSeen = lastSeen
+	if self.debug then
+		self:Print(updateCount.." change applied to last seen data.")
+	end
+
+	WorldBossStatus.db.global.lastSeen = lastSeenData
+ end
+
+function FlagActiveBosses()
+	local bossData = WorldBossStatus:GetBossData()
+	local lastSeenData = WorldBossStatus.db.global.lastSeen or {}
+   
+	for _, category in pairs(bossData) do		
+		for _, boss in pairs(category.bosses) do
+			if boss.worldQuestID then
+				boss.lastSeen = lastSeenData[boss.index] 
+				boss.active = false
+				if WorldBossStatus.debug then
+					local name = C_TaskQuest.GetQuestInfoByQuestID(boss.worldQuestID) or "?"
+					local mins = C_TaskQuest.GetQuestTimeLeftMinutes(boss.worldQuestID) or "?"
+					local active = C_TaskQuest.IsActive(boss.worldQuestID) or "false"
+					WorldBossStatus:Print("World Quest ID: [ID="..boss.worldQuestID.. ", Name="..name.. ", Time Left="..mins..", Active=",active)
+				end
+				if C_TaskQuest.IsActive(boss.worldQuestID) or 
+					(IsQuestFlaggedCompleted(boss.trackingID) and boss.resetInterval == resetIntervals.weekly) then
+					boss.lastSeen = time()
+					boss.active = true
+				elseif boss.resetInterval == resetIntervals.weekly then
+					boss.active = boss.lastSeen and boss.lastSeen > (GetWeeklyQuestResetTime() - 604800)
+				elseif boss.factionCounterpartID then
+					if boss.lastSeen and lastSeenData[tostring(boss.factionCounterpartID)] then
+						boss.active = boss.active > lastSeenData[tostring(boss.factionCounterpartID)]
+					elseif boss.lastSeen then
+						boss.active = true
+					end
+				end
+				lastSeenData[boss.index] = boss.lastSeen
+			else
+				boss.active = true
+			end
+			
+		end
+	end
+
+	WorldBossStatus.db.global.lastSeen = lastSeenData
 end
 
-
-
-
- function GetBoss(encounterID, questID, mapID, bonusRollQuestID, drops, resetInterval, faction)
+local function GetWorldBoss(args)
 	local boss = {}
 
-	if not resetInterval then resetInterval = resetIntervals.weekly end
-
-	
-
-	boss.name = EJ_GetEncounterInfo(encounterID)
-	boss.questId = questID
-	boss.bonusRollQuestID = bonusRollQuestID
-	boss.drops = drops
-	boss.resetInterval = resetInterval
-	boss.faction = faction
-	boss.displayName = boss.name
-
-	_, boss.name = EJ_GetCreatureInfo(1, encounterID)
-
-	if (mapID) then
-		local mapInfo = C_Map.GetMapInfo(mapID)
-		if mapInfo then 
-			boss.location = mapInfo.name 
+	if not args.name then
+		if args.encounterID then
+			args.name = EJ_GetEncounterInfo(args.encounterID)
+		elseif args.worldQuestID then
+			args.name = C_TaskQuest.GetQuestInfoByQuestID(args.worldQuestID) or "?"
+		else
+			args.name = "Unkown"
 		end
 	end
 
+	if not args.location then
+		if not args.zoneID and args.worldQuestID then
+			args.zoneID = C_TaskQuest.GetQuestZoneID(args.worldQuestID)
+		end
+
+		if args.zoneID then
+			local mapInfo = C_Map.GetMapInfo(args.zoneID)
+			args.location = mapInfo.name
+		end
+	end
+
+	if not args.trackingID and args.worldQuestID then
+		args.trackingID = args.worldQuestID
+	end
+
+	if not args.resetinterval then
+		args.resetInterval = resetIntervals.weekly
+	end
+
+	boss.index = tostring(args.trackingID or args.dungeonID)
+	boss.name = args.name
+	boss.location = args.location
+	boss.trackingID = args.trackingID
+	boss.questId = args.trackingID
+	boss.bonusRollID = args.bonusRollID
+
+	boss.worldQuestID = args.worldQuestID
+	boss.dungeonID = args.dungeonID
+	boss.resetInterval = args.resetInterval
+	boss.faction = args.faction
+	boss.factionCounterpartID = args.factionCounterpartID
+	boss.crowdWatch = args.crowdWatch
+	boss.prerequisite = args.prerequisite
+							
 	return boss
 end
 
@@ -104,144 +169,135 @@ function AddHoliday()
 		holidayBosses.bosses = bosses
 		holidayBosses.bonusRollCurrencies = {1580}
 
-		BOSS_DATA[#BOSS_DATA +1] = holidayBosses
+		--WorldBossStatus.data[#WorldBossStatus.data +1] = holidayBosses
+		table.insert(WorldBossStatus.data, holidayBosses)
 	end
 end
 
 function AddZandalarAndKulTiras()
 	local category = {}
+	local criteria = { 
+		['Alliance'] = 51918, 
+		['Horde'] = 51916
+	}
 
 	category.name = _G["EXPANSION_NAME7"]
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 7
-	category.maxKills = 2
-	category.maps = {
-		942, -- STORMSONG_VALLEY,
-		896, -- DRUSTVAR
-		895, -- TIRAGARDE_SOUND
-		864, -- VOLDUN
-		863, -- NAZMIR
-		862, -- ZULDAZAR
-		14   -- ARATHI_HIGHLANDS 
-	}
 	category.bosses = {
-		GetBoss(2210, 52196, 864, nil, { gear = 355 }), -- Dunegorger Kraulok
-		GetBoss(2141, 52169, 862, nil, { gear = 355 } ), -- Ji'arak
-		GetBoss(2139, 52181, 863, nil, { gear = 355 }), -- T'zane
-		GetBoss(2198, 52166, 942, nil, { gear = 355 }), -- Warbringer Yenajz
-		GetBoss(2199, 52163, 895, nil, { gear = 355 }), -- Azurethos, The Winged Typhoon
-		GetBoss(2197, 52157, 896, nil, { gear = 355 }), -- Hailstone Construct
-		GetBoss(2213, 52847, 14, 52273, { gear = 370, toy = true }, resetIntervals.unknown, 'Alliance'), -- Doom's Howl (Alliance)
-		GetBoss(2212, 52848, 14, 52274, { gear = 370, toy = true }, resetIntervals.unknown, 'Horde')  -- The Lion's Roar (Horde)
+		GetWorldBoss({worldQuestID = 52196, trackingID = 53000, bonusRollID = 52265, encounterID = 2210, prerequisite = criteria }),		-- Dunegorger Kraulok
+		GetWorldBoss({worldQuestID = 52169, encounterID = 2141, prerequisite = criteria }), 												-- Ji'arak
+		GetWorldBoss({worldQuestID = 52181, encounterID = 2139, prerequisite = criteria }),													-- T'zane
+		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
+		GetWorldBoss({worldQuestID = 52163, encounterID = 2199, prerequisite = criteria }), 												-- Azurethos, The Winged Typhoon
+		GetWorldBoss({worldQuestID = 52157, encounterID = 2197, prerequisite = criteria }), 												-- Hailstone Construct
+		GetWorldBoss({worldQuestID = 52847, prerequisite = criteria, faction = 'Alliance', factionCounterpartID = 52848, 
+			crowdWatch = true }), 																											-- Doom's Howl
+		GetWorldBoss({worldQuestID = 52848, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 52847, crowdWatch = true}),	-- The Lion's Roar
+		GetWorldBoss({worldQuestID = 54895, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance', 
+			factionCounterpartID = 54861, resetInterval = resetIntervals.unknown, crowdWatch = true }),										-- Ivus the Decayed
+		GetWorldBoss({worldQuestID = 54861, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
+			resetInterval = resetIntervals.unknown, crowdWatch = true })																	-- Ivus the Forest Lord
 	}	
-	category.showLocations = true 
-	category.showDrops = true
-
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
 		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
-		BOSS_DATA[#BOSS_DATA +1] = category
+		--WorldBossStatus.data[#WorldBossStatus.data +1] = category
+		table.insert(WorldBossStatus.data, category)
 	end
 end
 
 function AddBrokenIsles()
 	local category = {}
-	local bosses = {}
+	local criteria = { 
+		['Alliance'] = 43341, 
+		['Horde'] = 43341
+	}
+	local kosumothCriteria = {
+		['Alliance'] = 43761, 
+		['Horde'] = 43761
+	}
 
 	--category.name = EJ_GetInstanceInfo(822) -- Broken Isles
 	category.name = _G["EXPANSION_NAME6"]
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 6
-	category.maxKills = 1
 	category.legacy = true
-	category.maps = {
-		619, -- BROKENISLES
-		627, -- DALARAN
-		630, -- AZSUNA
-		634, -- STORMHEIM
-		641, -- VALSHARAH
-		650, -- HIGHMOUNTAIN
-		680, -- SURAMAR
-		790, -- EYEOFAZSHARA
-		646, -- BROKENSHORE
-		905, -- ARGUS
-		885, -- ANTORANWASTES
-		830, -- KROKUUN
-		882, -- MACAREE
-		62,  -- DARKSHORE
-		947  -- AZEROTH	
-	}
 	category.bosses = {
-		GetBoss(1790, 43512, 680, nil, { gear = 172 }), -- Ana-Mouz
-		GetBoss(1774, 43193), -- Calamir
-		GetBoss(1789, 43448), -- Drugon the Frostblood
-		GetBoss(1795, 43985), -- Flotsam
-		GetBoss(1770, 42819), -- Humongris 
-		GetBoss(1769, 43192), -- Levantus
-		GetBoss(1783, 43513), -- Na'zak the Fiend
-		GetBoss(1749, 42270), -- Nithogg
-		GetBoss(1763, 42779), -- Shar'thos
-		GetBoss(1756, 42269), -- The Soultakers
-		GetBoss(1796, 44287), -- Withered'Jim
-		GetBoss(1956, 47061), -- Apocron
-		GetBoss(1883, 46947), -- Brutallus
-		GetBoss(1884, 46948), -- Malificus
-		GetBoss(1885, 46945), -- Si'vash
-		{ name = 'Kosumoth', questId = 43798, resetInterval = resetIntervals.weekly } -- Kosumoth
+		GetWorldBoss({encounterID = 1790, worldQuestID = 43512, prerequisite = criteria}), 	-- Ana-Mouz
+		GetWorldBoss({encounterID = 1774, worldQuestID = 43193, trackingID = 44502, bonusRollID = 44897, prerequisite = criteria}), 	-- Calamir
+		GetWorldBoss({encounterID = 1789, worldQuestID = 43448, prerequisite = criteria}), 	-- Drugon the Frostblood
+		GetWorldBoss({encounterID = 1795, worldQuestID = 43985, prerequisite = criteria}), 	-- Flotsam
+		GetWorldBoss({encounterID = 1770, worldQuestID = 42819, prerequisite = criteria}), 	-- Humongris 
+		GetWorldBoss({encounterID = 1769, worldQuestID = 43192, prerequisite = criteria}), 	-- Levantus
+		GetWorldBoss({encounterID = 1783, worldQuestID = 43513, prerequisite = criteria}), 	-- Na'zak the Fiend
+		GetWorldBoss({encounterID = 1749, worldQuestID = 42270, prerequisite = criteria}), 	-- Nithogg
+		GetWorldBoss({encounterID = 1763, worldQuestID = 42779, prerequisite = criteria}), 	-- Shar'thos
+		GetWorldBoss({encounterID = 1756, worldQuestID = 42269, prerequisite = criteria}), 	-- The Soultakers
+		GetWorldBoss({encounterID = 1796, worldQuestID = 44287, prerequisite = criteria}), 	-- Withered'Jim
+		GetWorldBoss({encounterID = 1956, worldQuestID = 47061, prerequisite = criteria}), 	-- Apocron
+		GetWorldBoss({encounterID = 1883, worldQuestID = 46947, prerequisite = criteria}), 	-- Brutallus
+		GetWorldBoss({encounterID = 1884, worldQuestID = 46948, prerequisite = criteria}), 	-- Malificus
+		GetWorldBoss({encounterID = 1885, worldQuestID = 46945, prerequisite = criteria}), 	-- Si'vash
+		GetWorldBoss({name = 'Kosumoth', worldQuestID = 43798, trackingID = 45479, prerequisite = kosumothCriteria})		-- Kosumoth
 	}
 
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
 		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
-		BOSS_DATA[#BOSS_DATA +1] = category
+		--WorldBossStatus.data[#WorldBossStatus.data +1] = category
+		table.insert(WorldBossStatus.data, category)
 	end
 end
 
 function AddDraenor()
 	local category = {}
+	local criteria = {
+		level = 100
+	}
 
 	category.name = EJ_GetInstanceInfo(557)	-- Draenor 
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 5
-	category.maxKills = 4
 	category.legacy = true
 	category.bosses = {
-		GetBoss(1452, 94015),	-- Supreme Lord Kazzak
-		GetBoss(1262, 37464),	-- Rukhmar
-		GetBoss(1211, 37462),	-- Tarlna the Ageless
-		GetBoss(1291, 37462)	-- Drov the Ruiner
+		GetWorldBoss({encounterID = 1452, trackingID = 39380, bonusRollID = 33069, zoneID = 534, prerequisite = criteria}),	-- Supreme Lord Kazzak
+		GetWorldBoss({encounterID = 1262, trackingID = 37464, bonusRollID = 37672, zoneID = 542, prerequisite = criteria}),	-- Rukhmar
+		GetWorldBoss({encounterID = 1211, trackingID = 37462, bonusRollID = 37675, zoneID = 543, prerequisite = criteria}),	-- Tarlna the Ageless
+		GetWorldBoss({encounterID = 1291, trackingID = 37460, bonusRollID = 37673, zoneID = 543, prerequisite = criteria})	-- Drov the Ruiner
 	}
 	
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
 		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
-		BOSS_DATA[#BOSS_DATA +1] = category
+		--WorldBossStatus.data[#WorldBossStatus.data +1] = category
+		table.insert(WorldBossStatus.data, category)
 	end
 end
 
 function AddPanderia()
 	local category = {}
-	local mapInfo = C_Map.GetMapInfo(554)
+	local criteria = {
+		level = 90
+	}
 
 	category.name = EJ_GetInstanceInfo(322)	-- Panderia
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 4
-	category.maxKills = 6
 	category.legacy = true
 	category.bosses = {
-		GetBoss(861, nil, 554),			-- Ordos
-		{ name = L["The Celestials"], displayName = L["The Celestials"], resetInterval = resetIntervals.weekly, location = mapInfo.name },	-- The Celestials 
-		GetBoss(826, nil, 507),			-- Oondasta
-		GetBoss(814, nil, 504),			-- Nalak
-		GetBoss(725, nil, 376),			-- Salyisis's Warband
-		GetBoss(691, nil, 379)			-- Sha of Anger
+		GetWorldBoss({encounterID = 861, trackingID = 33118, bonusRollID = 33225, zoneID = 554, prerequisite = criteria }),				-- Ordos
+		GetWorldBoss({ name = L["The Celestials"], trackingID = 33117, bonusRollID = 33226, zoneID = 554, prerequisite = criteria }),	-- The Celestials 
+		GetWorldBoss({encounterID = 826, trackingID = 32519, bonusRollID = 32922, zoneID = 507, prerequisite = criteria}),				-- Oondasta
+		GetWorldBoss({encounterID = 814, trackingID = 33109, bonusRollID = 32919, zoneID = 504, prerequisite = criteria}),				-- Nalak
+		GetWorldBoss({encounterID = 725, trackingID = 32098, bonusRollID = 32923, zoneID = 376, prerequisite = criteria}),				-- Salyisis's Warband
+		GetWorldBoss({encounterID = 691, trackingID = 32099, bonusRollID = 32924, zoneID = 379, prerequisite = criteria})				-- Sha of Anger
 	}
-	category.showLocations = true 
 	
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
 		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
-		BOSS_DATA[#BOSS_DATA +1] = category
+		table.insert(WorldBossStatus.data, category)
 	end
 end
 
@@ -255,9 +311,36 @@ function WorldBossStatus:GetNextReset()
 	return reset
 end
 
+function WorldBossStatus:GetLastReset()  
+	local reset = {}
+
+	reset[resetIntervals.daily] = time() + GetQuestResetTime() - 86400
+	reset[resetIntervals.weekly] = GetWeeklyQuestResetTime() - 604800
+	reset[resetIntervals.unknown] = -1
+
+	return reset
+end
+
+function WorldBossStatus:GetBossResetInfo(boss)
+	local nextRest, interval
+	
+	if boss.resetInterval == resetIntervals.daily then
+		nextReset = time() + GetQuestResetTime()
+		interval = 86400
+	elseif boss.resetInterval == resetIntervals.weekly then	
+		GetWeeklyQuestResetTime()
+		interval = 604800
+	else
+		nextReset = nil
+		interval = nil	
+	end
+
+	return nextReset, interval
+end
+
 function WorldBossStatus:GetBossData(update)
-	if update or BOSS_DATA == nil or #BOSS_DATA == 0 then		
-		BOSS_DATA = {}
+	if update or WorldBossStatus.data == nil then		
+		WorldBossStatus.data = {}
 
 		AddHoliday()
 		AddZandalarAndKulTiras()
@@ -268,5 +351,5 @@ function WorldBossStatus:GetBossData(update)
 		FlagActiveBosses()
 	end
 
-	return BOSS_DATA
+	return WorldBossStatus.data
 end
