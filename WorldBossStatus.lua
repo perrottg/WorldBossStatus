@@ -939,7 +939,11 @@ function WorldBossStatus:GROUP_ROSTER_UPDATE(event, ...)
 	if self.debug then
 		self:Print("Received event GROUP_ROSTER_UPDATE.")
 	end
-	DelayedSendComms("PARTY")
+	if IsInRaid() then
+		DelayedSendComms("RAID")
+	else
+		DelayedSendComms("PARTY")
+	end
 end
 
 function WorldBossStatus:GUILD_ROSTER_UPDATE(event, ...)

@@ -189,7 +189,7 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 52169, encounterID = 2141, prerequisite = criteria }), 												-- Ji'arak
 		GetWorldBoss({worldQuestID = 52181, encounterID = 2139, prerequisite = criteria }),													-- T'zane
 		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
-		GetWorldBoss({worldQuestID = 52163, encounterID = 2199, prerequisite = criteria }), 												-- Azurethos, The Winged Typhoon
+		GetWorldBoss({worldQuestID = 52163, bonusRollID = 52267, encounterID = 2199, prerequisite = criteria }), 												-- Azurethos, The Winged Typhoon
 		GetWorldBoss({worldQuestID = 52157, encounterID = 2197, prerequisite = criteria }), 												-- Hailstone Construct
 		GetWorldBoss({worldQuestID = 52847, prerequisite = criteria, faction = 'Alliance', factionCounterpartID = 52848, 
 			crowdWatch = true }), 																											-- Doom's Howl
