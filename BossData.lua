@@ -77,7 +77,7 @@ function FlagActiveBosses()
 					boss.active = boss.lastSeen and boss.lastSeen > (GetWeeklyQuestResetTime() - 604800)
 				elseif boss.factionCounterpartID then
 					if boss.lastSeen and lastSeenData[tostring(boss.factionCounterpartID)] then
-						boss.active = boss.active > lastSeenData[tostring(boss.factionCounterpartID)]
+						boss.active = boss.lastSeen > lastSeenData[tostring(boss.factionCounterpartID)]
 					elseif boss.lastSeen then
 						boss.active = true
 					end
