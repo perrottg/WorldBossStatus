@@ -14,35 +14,33 @@ function GetWeeklyQuestResetTime()
  end
 
  function WorldBossStatus:GetLastSeenData(crowdTrackingOnly)
-	local lastSeenData = {}
+	local lastSeenData = WorldBossStatus.db.global.lastSeen or {}
+	local result = {}
 	local bossData = self:GetBossData()
 
 	for _, category in pairs(bossData) do		
 		for _, boss in pairs(category.bosses) do
-			if boss.lastSeen and (boss.crowdTracking or not crowdTrackingOnly) then
-				lastSeenData[boss.index] = boss.lastSeen
+			if lastSeenData[boss.index] and (boss.crowdTracking or not crowdTrackingOnly) then
+				result[boss.index] = lastSeenData[boss.index]
 			end
 		end
 	end
 
-	return lastSeenData
+	return result
  end
 
  function WorldBossStatus:UpdateLastSeenData(newLastSeenData)
-	local lastSeenData = {}
+	local lastSeenData = WorldBossStatus.db.global.lastSeen or {}
 	local bossData = WorldBossStatus:GetBossData()
 	local updateCount = 0
 
 	for _, category in pairs(bossData) do		
 		for _, boss in pairs(category.bosses) do
 			if newLastSeenData[boss.index] then
-				if not boss.lastSeen or newLastSeenData[boss.index] > boss.lastSeen then
-					boss.lastSeen = newLastSeenData[boss.index]
+				if not lastSeenData[boss.index] or newLastSeenData[boss.index] > lastSeenData[boss.index] then
+					lastSeenData[boss.index] = newLastSeenData[boss.index]
 					updateCount = updateCount + 1
 				end
-			end
-			if boss.lastSeen then
-				lastSeenData[boss.index] = boss.lastSeen
 			end
 		end
 	end
@@ -54,6 +52,7 @@ function GetWeeklyQuestResetTime()
 	WorldBossStatus.db.global.lastSeen = lastSeenData
  end
 
+
 function FlagActiveBosses()
 	local bossData = WorldBossStatus:GetBossData()
 	local lastSeenData = WorldBossStatus.db.global.lastSeen or {}
@@ -61,7 +60,6 @@ function FlagActiveBosses()
 	for _, category in pairs(bossData) do		
 		for _, boss in pairs(category.bosses) do
 			if boss.worldQuestID then
-				boss.lastSeen = lastSeenData[boss.index] 
 				boss.active = false
 				if WorldBossStatus.debug then
 					local name = C_TaskQuest.GetQuestInfoByQuestID(boss.worldQuestID) or "?"
@@ -69,20 +67,28 @@ function FlagActiveBosses()
 					local active = C_TaskQuest.IsActive(boss.worldQuestID) or "false"
 					WorldBossStatus:Print("World Quest ID: [ID="..boss.worldQuestID.. ", Name="..name.. ", Time Left="..mins..", Active=",active)
 				end
-				if C_TaskQuest.IsActive(boss.worldQuestID) or 
-					(IsQuestFlaggedCompleted(boss.trackingID) and boss.resetInterval == resetIntervals.weekly) then
-					boss.lastSeen = time()
-					boss.active = true
-				elseif boss.resetInterval == resetIntervals.weekly then
-					boss.active = boss.lastSeen and boss.lastSeen > (GetWeeklyQuestResetTime() - 604800)
-				elseif boss.factionCounterpartID then
-					if boss.lastSeen and lastSeenData[tostring(boss.factionCounterpartID)] then
-						boss.active = boss.lastSeen > lastSeenData[tostring(boss.factionCounterpartID)]
-					elseif boss.lastSeen then
+
+				if WorldBossStatus:PlayerIsEligibleForBoss(boss) then
+					if C_TaskQuest.IsActive(boss.worldQuestID) or 
+						(IsQuestFlaggedCompleted(boss.trackingID) and boss.resetInterval == resetIntervals.weekly) then
+						lastSeenData[boss.index]  = time()
 						boss.active = true
+					elseif boss.factionCounterpartID then
+						if not C_TaskQuest.IsActive(boss.worldQuestID) and not IsQuestFlaggedCompleted(boss.trackingID) then
+							lastSeenData[tostring(boss.factionCounterpartID)] = time()
+						end
+					end
+				else
+					if boss.resetInterval == resetIntervals.weekly then
+						if lastSeenData[boss.index] and lastSeenData[boss.index] > GetWeeklyQuestResetTime() - 604800 then
+							boss.active = true
+						end
+					elseif boss.factionCounterpartID then
+						if lastSeenData[boss.index] and lastSeenData[tostring(boss.factionCounterpartID)] then
+							boss.active = lastSeenData[boss.index] > lastSeenData[tostring(boss.factionCounterpartID)]
+						end
 					end
 				end
-				lastSeenData[boss.index] = boss.lastSeen
 			else
 				boss.active = true
 			end

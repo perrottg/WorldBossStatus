@@ -660,6 +660,27 @@ function WorldBossStatus:GetRealmInfo(realmName)
 	return realmInfo
 end
 
+
+function WorldBossStatus:PlayerIsEligibleForBoss(boss)
+	local playerFaction = UnitFactionGroup("player")
+	local playerLevel = UnitLevel("player")
+	local eligible = true
+
+	if boss.faction and boss.faction ~= playerFaction then
+		eligible = false
+	elseif boss.prerequisite then
+		local criteria = boss.prerequisite
+		if criteria.level and playerLevel < criteria.level then
+			eligible = false
+		end
+		if criteria[playerFaction] and not IsQuestFlaggedCompleted(tostring(criteria[playerFaction])) then
+			eligible = false
+		end
+	end
+
+	return eligible
+ end
+
 local function UpdateStatusForCharacter(currentStatus)
 	local status = currentStatus or {}
 	local bossData = WorldBossStatus:GetBossData()	
@@ -672,8 +693,7 @@ local function UpdateStatusForCharacter(currentStatus)
 
 			bossStatus.killed = (boss.trackingID and IsQuestFlaggedCompleted(boss.trackingID)) or
 				(boss.dungeonID and GetLFGDungeonRewards(boss.dungeonID))
-			bossStatus.eligible = (not prerequisite[UnitFactionGroup("player")] or IsQuestFlaggedCompleted(prerequisite[UnitFactionGroup("player")])) and
-				(not prerequisite.level or UnitLevel("player") >= prerequisite.level)
+			bossStatus.eligible = WorldBossStatus:PlayerIsEligibleForBoss(boss)
 			bossStatus.bonusRollUsed = boss.bonusRollID and IsQuestFlaggedCompleted(boss.bonusRollID)
 			bossStatus.lastUpdated = now
 
