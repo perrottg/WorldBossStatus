@@ -234,7 +234,7 @@ function AddBrokenIsles()
 		GetWorldBoss({encounterID = 1749, worldQuestID = 42270, prerequisite = criteria}), 	-- Nithogg
 		GetWorldBoss({encounterID = 1763, worldQuestID = 42779, prerequisite = criteria}), 	-- Shar'thos
 		GetWorldBoss({encounterID = 1756, worldQuestID = 42269, prerequisite = criteria}), 	-- The Soultakers
-		GetWorldBoss({encounterID = 1796, worldQuestID = 44287, prerequisite = criteria}), 	-- Withered'Jim
+		GetWorldBoss({encounterID = 1796, worldQuestID = 44287, trackingID = 44511, bonusRollID = 44906, prerequisite = criteria}),		-- Withered'Jim
 		GetWorldBoss({encounterID = 1956, worldQuestID = 47061, prerequisite = criteria}), 	-- Apocron
 		GetWorldBoss({encounterID = 1883, worldQuestID = 46947, prerequisite = criteria}), 	-- Brutallus
 		GetWorldBoss({encounterID = 1884, worldQuestID = 46948, prerequisite = criteria}), 	-- Malificus

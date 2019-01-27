@@ -191,7 +191,7 @@ local function GetCurrentKillStatus(boss, bossStatus)
 	else
 		killed = false
 		bonusRollUsed = false
-		eligible = true
+		eligible = false
 	end
 
 	return killed, bonusRollUsed, eligible
@@ -346,7 +346,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 
 		for _, boss in pairs(category.bosses) do
 			local bossStatus = status[boss.index]
-			local killed, _, eligible = GetCurrentKillStatus(boss, bossStatus)
+			local killed, bonusRollUsed, eligible = GetCurrentKillStatus(boss, bossStatus)
 
 			if boss.active and eligible then
 				eligibleBosses = eligibleBosses + 1
@@ -935,7 +935,7 @@ function WorldBossStatus:RAID_ROSTER_UPDATE(event, ...)
 
 end
 
-function WorldBossStatus:GROUP_ROSTER_UPDATE(event, ...)
+function WorldBossStatus:GROUP_ROSTER_UPDATE(event, arg1, ...)
 	if self.debug then
 		self:Print("Received event GROUP_ROSTER_UPDATE.")
 	end
@@ -946,7 +946,7 @@ function WorldBossStatus:GROUP_ROSTER_UPDATE(event, ...)
 	end
 end
 
-function WorldBossStatus:GUILD_ROSTER_UPDATE(event, ...)
+function WorldBossStatus:GUILD_ROSTER_UPDATE(event, arg1, ...)
 	if self.debug then
 		self:Print("Received event GUILD_ROSTER_UPDATE.")
 	end
