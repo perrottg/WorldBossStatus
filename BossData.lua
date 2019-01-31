@@ -203,7 +203,7 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 54895, encounterID = 2345, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance', 
 			factionCounterpartID = 54861, resetInterval = resetIntervals.unknown, crowdWatch = true }),										-- Ivus the Decayed
 		GetWorldBoss({worldQuestID = 54861, encounterID = 2329, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
-			resetInterval = resetIntervals.unknown, crowdWatch = true })																	-- Ivus the Forest Lord
+			resetInterval = resetIntervals.unknown, crowdWatch = true, zoneID = 62 })																	-- Ivus the Forest Lord
 	}	
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
