@@ -868,7 +868,7 @@ local function CheckWorldBosses()
 	for _, category in pairs(bossData) do
 		if not category.legacy then
 			for _, boss in pairs(category.bosses) do
-				if boss.worldQuestID and boss.active and not IsQuestFlaggedCompleted(boss.trackingID) then 
+				if boss.worldQuestID and boss.active and not IsQuestFlaggedCompleted(boss.trackingID) and WorldBossStatus:PlayerIsEligibleForBoss(boss)   then 
 					local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.worldQuestID)
 					local bossname = colorise(boss.name, epic)
 					local text = ""
