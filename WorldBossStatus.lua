@@ -177,21 +177,16 @@ end
 
 local function GetCurrentKillStatus(boss, bossStatus)
 	local nextReset, interval = WorldBossStatus:GetBossResetInfo(boss)
-	local killed, bonusRollUsed, eligible
+	local killed = false 
+	local bonusRollUsed = false
+	local eligible = false
 
 	if bossStatus then
 		eligible = bossStatus.eligible
 		if bossStatus.lastUpdated and nextReset then 
 			killed = bossStatus.killed and bossStatus.lastUpdated > nextReset - interval
 			bonusRollUsed = bossStatus.BonusRollUsed and bossStatus.lastUpdated > nextReset - interval
-		else
-			killed = bossStatus.killed
-			bonusRollUsed = bossStatus.bonusRollUsed
 		end
-	else
-		killed = false
-		bonusRollUsed = false
-		eligible = false
 	end
 
 	return killed, bonusRollUsed, eligible
