@@ -197,12 +197,12 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
 		GetWorldBoss({worldQuestID = 52163, trackingID = 52997, bonusRollID = 52267, encounterID = 2199, prerequisite = criteria }), 		-- Azurethos, The Winged Typhoon
 		GetWorldBoss({worldQuestID = 52157, encounterID = 2197, prerequisite = criteria }), 												-- Hailstone Construct
-		GetWorldBoss({worldQuestID = 52847, prerequisite = criteria, faction = 'Alliance', factionCounterpartID = 52848, 
+		GetWorldBoss({worldQuestID = 52847, encounterID = 2213, prerequisite = criteria, faction = 'Alliance', factionCounterpartID = 52848, 
 			crowdWatch = true }), 																											-- Doom's Howl
-		GetWorldBoss({worldQuestID = 52848, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 52847, crowdWatch = true}),	-- The Lion's Roar
-		GetWorldBoss({worldQuestID = 54895, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance', 
+		GetWorldBoss({worldQuestID = 52848, encounterID = 2212, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 52847, crowdWatch = true}),	-- The Lion's Roar
+		GetWorldBoss({worldQuestID = 54895, encounterID = 2345, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance', 
 			factionCounterpartID = 54861, resetInterval = resetIntervals.unknown, crowdWatch = true }),										-- Ivus the Decayed
-		GetWorldBoss({worldQuestID = 54861, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
+		GetWorldBoss({worldQuestID = 54861, encounterID = 2329, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
 			resetInterval = resetIntervals.unknown, crowdWatch = true })																	-- Ivus the Forest Lord
 	}	
 	if GetAccountExpansionLevel() >= category.expansion and 
