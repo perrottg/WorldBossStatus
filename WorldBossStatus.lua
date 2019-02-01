@@ -185,7 +185,10 @@ local function GetCurrentKillStatus(boss, bossStatus)
 		eligible = bossStatus.eligible
 		if bossStatus.lastUpdated and nextReset then 
 			killed = bossStatus.killed and bossStatus.lastUpdated > nextReset - interval
-			bonusRollUsed = bossStatus.BonusRollUsed and bossStatus.lastUpdated > nextReset - interval
+			bonusRollUsed = bossStatus.bonusRollUsed and bossStatus.lastUpdated > nextReset - interval
+		elseif bossStatus.lastUpdated then
+			killed = bossStatus.killed 
+			bonusRollUsed = bossStatus.bonusRollUsed
 		end
 	end
 
