@@ -192,7 +192,7 @@ function AddZandalarAndKulTiras()
 	category.expansion = 7
 	category.bosses = {
 		GetWorldBoss({worldQuestID = 52196, trackingID = 53000, bonusRollID = 52265, encounterID = 2210, prerequisite = criteria }),		-- Dunegorger Kraulok
-		GetWorldBoss({worldQuestID = 52169, encounterID = 2141, prerequisite = criteria }), 												-- Ji'arak
+		GetWorldBoss({worldQuestID = 52169, trackingID = 52998, bonusRollID = 52264, encounterID = 2141, prerequisite = criteria }), 		-- Ji'arak
 		GetWorldBoss({worldQuestID = 52181, encounterID = 2139, prerequisite = criteria }),													-- T'zane
 		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
 		GetWorldBoss({worldQuestID = 52163, trackingID = 52997, bonusRollID = 52267, encounterID = 2199, prerequisite = criteria }), 		-- Azurethos, The Winged Typhoon
