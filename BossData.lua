@@ -127,7 +127,7 @@ local function GetWorldBoss(args)
 		args.trackingID = args.worldQuestID
 	end
 
-	if not args.resetinterval then
+	if not args.resetInterval then
 		args.resetInterval = resetIntervals.weekly
 	end
 
@@ -328,13 +328,13 @@ function WorldBossStatus:GetLastReset()
 end
 
 function WorldBossStatus:GetBossResetInfo(boss)
-	local nextRest, interval
+	local nextReset, interval
 	
 	if boss.resetInterval == resetIntervals.daily then
 		nextReset = time() + GetQuestResetTime()
 		interval = 86400
 	elseif boss.resetInterval == resetIntervals.weekly then	
-		GetWeeklyQuestResetTime()
+		nextReset = GetWeeklyQuestResetTime()
 		interval = 604800
 	else
 		nextReset = nil
