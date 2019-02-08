@@ -196,7 +196,7 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 52181, encounterID = 2139, prerequisite = criteria }),													-- T'zane
 		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
 		GetWorldBoss({worldQuestID = 52163, trackingID = 52997, bonusRollID = 52267, encounterID = 2199, prerequisite = criteria }), 		-- Azurethos, The Winged Typhoon
-		GetWorldBoss({worldQuestID = 52157, encounterID = 2197, prerequisite = criteria }), 												-- Hailstone Construct
+		GetWorldBoss({worldQuestID = 52157, trackingID = 52999, bonusRollID = 52268, encounterID = 2197, prerequisite = criteria }), 		-- Hailstone Construct
 		GetWorldBoss({worldQuestID = 52847, encounterID = 2213, prerequisite = criteria, faction = 'Alliance', factionCounterpartID = 52848, 
 			crowdWatch = true }), 																											-- Doom's Howl
 		GetWorldBoss({worldQuestID = 52848, encounterID = 2212, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 52847, crowdWatch = true}),	-- The Lion's Roar
@@ -236,7 +236,7 @@ function AddBrokenIsles()
 		GetWorldBoss({encounterID = 1795, worldQuestID = 43985, prerequisite = criteria}), 	-- Flotsam
 		GetWorldBoss({encounterID = 1770, worldQuestID = 42819, prerequisite = criteria}), 	-- Humongris 
 		GetWorldBoss({encounterID = 1769, worldQuestID = 43192, prerequisite = criteria}), 	-- Levantus
-		GetWorldBoss({encounterID = 1783, worldQuestID = 43513, prerequisite = criteria}), 	-- Na'zak the Fiend
+		GetWorldBoss({encounterID = 1783, worldQuestID = 43513, trackingID = 44507, bonusRollID = 44902, prerequisite = criteria}), 	-- Na'zak the Fiend
 		GetWorldBoss({encounterID = 1749, worldQuestID = 42270, prerequisite = criteria}), 	-- Nithogg
 		GetWorldBoss({encounterID = 1763, worldQuestID = 42779, prerequisite = criteria}), 	-- Shar'thos
 		GetWorldBoss({encounterID = 1756, worldQuestID = 42269, prerequisite = criteria}), 	-- The Soultakers
