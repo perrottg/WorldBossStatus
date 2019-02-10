@@ -4,6 +4,8 @@ if not L then
 	return
 end
 
+L["World Boss Status is out of date. You can download the newest version fron Curse.com."] = true
+
 L["World Bosses"] = true
 L["World Boss Status"] = true
 

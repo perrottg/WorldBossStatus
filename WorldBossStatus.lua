@@ -253,12 +253,11 @@ local function ShowBossKills(character, region)
 	for _, boss in pairs(region.bosses) do
 		local bossStatus = status[boss.index]
 
-		--local killed, killTime, bonusRollUsed = GetCurrentKillStatus(boss, character.worldBossKills[boss.name], character.bossKills[boss.name])
-				
+		if not bossStatus and boss.worldQuestID then
+			bossStatus = status[tostring(boss.worldQuestID)]
+		end
+			
 		if not boss.faction or character.faction == boss.faction then
-			--ShowKill(boss, killed, killInfo, region.showLocations, region.showDrops)
-
-			--ShowKill(boss, killed, killTime, bonusRollUsed, region.showLocations, region.showDrops)
 			ShowKill(boss, bossStatus)
 		end
 	end	
@@ -344,15 +343,20 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 
 		for _, boss in pairs(category.bosses) do
 			local bossStatus = status[boss.index]
+
+			if not bossStatus and boss.worldQuestID then
+				bossStatus = status[tostring(boss.worldQuestID)]
+			end
+
 			local killed, bonusRollUsed, eligible = GetCurrentKillStatus(boss, bossStatus)
 
 			if boss.active and eligible then
 				eligibleBosses = eligibleBosses + 1
-			end
 
-			if killed then
-				kills = kills + 1
-			end
+				if killed then
+					kills = kills + 1
+				end
+			end			
 		end
 
 		if eligibleBosses == 0 then
@@ -369,10 +373,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 		end)
 
 		tooltip:SetCellScript(line, column, "OnLeave", HideSubTooltip)
-
-
 		column = column+1
-
 	end
 
 	if characterInfo.class then
@@ -866,7 +867,7 @@ local function CheckWorldBosses()
 	for _, category in pairs(bossData) do
 		if not category.legacy then
 			for _, boss in pairs(category.bosses) do
-				if boss.worldQuestID and boss.active and not IsQuestFlaggedCompleted(boss.trackingID) and WorldBossStatus:PlayerIsEligibleForBoss(boss)   then 
+				if boss.worldQuestID and boss.active and not IsQuestFlaggedCompleted(boss.trackingID) and WorldBossStatus:PlayerIsEligibleForBoss(boss) then 
 					local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.worldQuestID)
 					local bossname = colorise(boss.name, epic)
 					local text = ""
@@ -893,7 +894,7 @@ local function VersionCheck(aVersion)
 		local currentVersion = GetAddOnMetadata(addonName, "Version")
 
 		if (aVersion > currentVersion) then
-			WorldBossStatus:Print("A new version ["..aVersion.."] of World Boss Status is available to download.")
+			WorldBossStatus:Print(L["World Boss Status is out of date. You can download the newest version fron Curse.com."])
 		else
 			if WorldBossStatus.debug then
 				WorldBossStatus:Print("Ignoring same version ["..aVersion.."] release.")
