@@ -159,12 +159,14 @@ function AddHoliday()
 
 		if isHoliday and dungeonID ~= 828  and description ~= "" then		
 			boss = {}
+
+			boss.index = dungeonID
 			boss.name = name
 			boss.displayName = name
 			boss.dungeonID = dungeonID
 			boss.active = true
 			boss.resetInterval = resetIntervals.daily
-			bosses[#bosses +1] = boss
+			table.insert(bosses, boss)
 		end 
 	end
 
@@ -174,8 +176,6 @@ function AddHoliday()
 		holidayBosses.maxKills = #bosses	
 		holidayBosses.bosses = bosses
 		holidayBosses.bonusRollCurrencies = {1580}
-
-		--WorldBossStatus.data[#WorldBossStatus.data +1] = holidayBosses
 		table.insert(WorldBossStatus.data, holidayBosses)
 	end
 end

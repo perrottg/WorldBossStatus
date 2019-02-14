@@ -3,6 +3,7 @@ WorldBossStatus = LibStub("AceAddon-3.0"):NewAddon("WorldBossStatus", "AceConsol
 	"AceComm-3.0", "AceSerializer-3.0");
 
 local textures = {}
+WorldBossStatus.data = nil
 
 textures.worldBossStatus = "Interface\\TARGETINGFRAME\\UI-RaidTargetingIcon_8.png"
 textures.alliance = "|TInterface\\FriendsFrame\\PlusManz-Alliance:18|t"
