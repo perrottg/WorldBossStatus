@@ -193,7 +193,7 @@ function AddZandalarAndKulTiras()
 	category.bosses = {
 		GetWorldBoss({worldQuestID = 52196, trackingID = 53000, bonusRollID = 52265, encounterID = 2210, prerequisite = criteria }),		-- Dunegorger Kraulok
 		GetWorldBoss({worldQuestID = 52169, trackingID = 52998, bonusRollID = 52264, encounterID = 2141, prerequisite = criteria }), 		-- Ji'arak
-		GetWorldBoss({worldQuestID = 52181, encounterID = 2139, prerequisite = criteria }),													-- T'zane
+		GetWorldBoss({worldQuestID = 52181, trackingID = 52996, bonusRollID = 52263, encounterID = 2139, prerequisite = criteria }),		-- T'zane
 		GetWorldBoss({worldQuestID = 52166, encounterID = 2198, prerequisite = criteria }), 												-- Warbringer Yenajz
 		GetWorldBoss({worldQuestID = 52163, trackingID = 52997, bonusRollID = 52267, encounterID = 2199, prerequisite = criteria }), 		-- Azurethos, The Winged Typhoon
 		GetWorldBoss({worldQuestID = 52157, trackingID = 52999, bonusRollID = 52268, encounterID = 2197, prerequisite = criteria }), 		-- Hailstone Construct
@@ -202,8 +202,8 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 52848, encounterID = 2212, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 52847, crowdWatch = true}),	-- The Lion's Roar
 		GetWorldBoss({worldQuestID = 54895, encounterID = 2345, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance', 
 			factionCounterpartID = 54861, resetInterval = resetIntervals.unknown, crowdWatch = true }),										-- Ivus the Decayed
-		GetWorldBoss({worldQuestID = 54861, encounterID = 2329, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
-			resetInterval = resetIntervals.unknown, crowdWatch = true, zoneID = 62 })																	-- Ivus the Forest Lord
+		GetWorldBoss({worldQuestID = 54896, encounterID = 2329, trackingID = 54861, bonusRollID = 54865, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862, 
+			resetInterval = resetIntervals.unknown, crowdWatch = true, zoneID = 62 })														-- Ivus the Forest Lord
 	}	
 	if GetAccountExpansionLevel() >= category.expansion and 
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
@@ -230,7 +230,7 @@ function AddBrokenIsles()
 	category.expansion = 6
 	category.legacy = true
 	category.bosses = {
-		GetWorldBoss({encounterID = 1790, worldQuestID = 43512, prerequisite = criteria}), 	-- Ana-Mouz
+		GetWorldBoss({encounterID = 1790, worldQuestID = 43512, trackingID = 44501, bonusRollID = 44896, prerequisite = criteria}), 	-- Ana-Mouz
 		GetWorldBoss({encounterID = 1774, worldQuestID = 43193, trackingID = 44502, bonusRollID = 44897, prerequisite = criteria}), 	-- Calamir
 		GetWorldBoss({encounterID = 1789, worldQuestID = 43448, prerequisite = criteria}), 	-- Drugon the Frostblood
 		GetWorldBoss({encounterID = 1795, worldQuestID = 43985, prerequisite = criteria}), 	-- Flotsam
