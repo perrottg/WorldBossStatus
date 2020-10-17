@@ -203,7 +203,11 @@ function AddZandalarAndKulTiras()
 		GetWorldBoss({worldQuestID = 54895, encounterID = 2345, trackingID = 54862, bonusRollID = 54864, prerequisite = criteria, faction = 'Alliance',
 			factionCounterpartID = 54861, resetInterval = resetIntervals.unknown, crowdWatch = true }),										-- Ivus the Decayed
 		GetWorldBoss({worldQuestID = 54896, encounterID = 2329, trackingID = 54861, bonusRollID = 54865, prerequisite = criteria, faction = 'Horde', factionCounterpartID = 54862,
-			resetInterval = resetIntervals.unknown, crowdWatch = true, zoneID = 62 })														-- Ivus the Forest Lord
+			resetInterval = resetIntervals.unknown, crowdWatch = true, zoneID = 62 }),														-- Ivus the Forest Lord
+		GetWorldBoss({worldQuestID = 58705, trackingID = 58508, bonusRollID = 58512, encounterID = 2378, prerequisite = criteria }),		-- Grand Empress Shek'zara
+		GetWorldBoss({worldQuestID = 55466, trackingID = 58510, bonusRollID = 58514, encounterID = 2381, prerequisite = criteria }),		-- Vuk'laz the Earthbreaker
+		GetWorldBoss({worldQuestID = 56057, trackingID = 56058, bonusRollID = 56900, encounterID = 2362, prerequisite = criteria }),		-- Ulmath, the Soulbinder
+		GetWorldBoss({worldQuestID = 56056, trackingID = 56055, bonusRollID = 56899, encounterID = 2363, prerequisite = criteria }),		-- Wekemara
 	}
 	if GetAccountExpansionLevel() >= category.expansion and
 		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
