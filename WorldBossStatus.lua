@@ -80,7 +80,7 @@ local defaults = {
 		},
 		characterOptions = {
 			levelRestriction = true,
-			minimumLevel = 120,
+			minimumLevel = 50,
 			removeInactive = true,
 			inactivityThreshold = 28,
 			include = 3,
@@ -532,7 +532,7 @@ function WorldBossStatus:DisplayRealmInToolip(realmName)
 
 	if WorldBossStatus.db.global.characterOptions.levelRestriction then
 		minimumLevel = WorldBossStatus.db.global.characterOptions.minimumLevel
-		if not minimumLevel then minimumLevel = 90 end
+		if not minimumLevel then minimumLevel = 35 end
 	end
 
 	if not characters then
