@@ -1,5 +1,5 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("WorldBossStatus")
-WorldBossStatus = LibStub("AceAddon-3.0"):NewAddon("WorldBossStatus", "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0", "LibSink-2.0", 
+WorldBossStatus = LibStub("AceAddon-3.0"):NewAddon("WorldBossStatus", "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0", "LibSink-2.0",
 	"AceComm-3.0", "AceSerializer-3.0");
 
 local textures = {}
@@ -55,7 +55,7 @@ local CURRENCIES = {	{currencyId = 1580,														  -- Seal of Wartorn Fate
 
 								  }
 						},
-						{currencyId = 1560}													  -- War Resources						 						
+						{currencyId = 1560}													  -- War Resources
 }
 
 
@@ -72,7 +72,7 @@ local defaults = {
 			},
 		MinimapButton = {
 			hide = false,
-		}, 
+		},
 		displayOptions = {
 			showHintLine = true,
 			showLegend = true,
@@ -80,20 +80,20 @@ local defaults = {
 		},
 		characterOptions = {
 			levelRestriction = true,
-			minimumLevel = 120,
+			minimumLevel = 50,
 			removeInactive = true,
 			inactivityThreshold = 28,
 			include = 3,
 		},
 		bossOptions = {
 			hideBoss = {
-			},	
+			},
 			trackLegacyBosses = false,
 			disableHoldidayBossTracking = false,
 		},
-		bonusRollOptions = {		
+		bonusRollOptions = {
 			trackWeeklyQuests = true,
-			trackedCurrencies = { 
+			trackedCurrencies = {
 				[1129] = true,
 			},
 			trackLegacyCurrencies = false,
@@ -101,13 +101,16 @@ local defaults = {
 	},
 }
 
-						   
+
 for key, currency in pairs(CURRENCIES) do
 	if not currency.name and currency.currencyId then
-		currency.name, _, currency.texture = GetCurrencyInfo(currency.currencyId)	
+		--currency.name, _, currency.texture = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
+		apiCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
+		currency.name = apiCurrencyInfo.Name
+		currency.texture = apiCurrencyInfo.iconFileID
 	end
 end
-				 						   
+
 local function colorise(s, color)
 	if color and s then
 		return format("|cff%02x%02x%02x%s|r", (color.r or 1) * 255, (color.g or 1) * 255, (color.b or 1) * 255, s)
@@ -124,14 +127,14 @@ local WorldBossStatusLauncher = LDB:NewDataObject(addonName, {
 			--"launcher",
 		icon = textures.worldBossStatus,
 		OnClick = function(clickedframe, button)
-			WorldBossStatus:ShowOptions() 
+			WorldBossStatus:ShowOptions()
 		end,
 		OnEnter = function(self)
 			frame = self
 			WorldBossStatus:ShowToolTip()
 		end,
 	})
-	
+
 
 
 
@@ -151,44 +154,44 @@ end })
 
 local function CleanupCharacters()
 	local options = WorldBossStatus:GetGlobalOptions()
-	local threshold = options.characterOptions.inactivityThreshold * (24 * 60 * 60)	
-	
+	local threshold = options.characterOptions.inactivityThreshold * (24 * 60 * 60)
+
 	if options.characterOptions.removeInactive or threshold == 0 then
 		return
 	 end
-	
+
 
 	for realm in pairs(options.realms) do
 		local realmInfo = options.realms[realm]
 		local characters = nil
-		
+
 		if realmInfo then
 			local characters = realmInfo.characters
-	
+
 			for key,value in pairs(characters) do
 				if value.lastUpdate and value.lastUpdate < time() - threshold then
 					value = nil
 				end
 			end
-			
+
 		end
 	end
-	
+
 end
 
 local function GetCurrentKillStatus(boss, bossStatus)
 	local nextReset, interval = WorldBossStatus:GetBossResetInfo(boss)
-	local killed = false 
+	local killed = false
 	local bonusRollUsed = false
 	local eligible = false
 
 	if bossStatus then
 		eligible = bossStatus.eligible
-		if bossStatus.lastUpdated and nextReset then 
+		if bossStatus.lastUpdated and nextReset then
 			killed = bossStatus.killed and bossStatus.lastUpdated > nextReset - interval
 			bonusRollUsed = bossStatus.bonusRollUsed and bossStatus.lastUpdated > nextReset - interval
 		elseif bossStatus.lastUpdated then
-			killed = bossStatus.killed 
+			killed = bossStatus.killed
 			bonusRollUsed = bossStatus.bonusRollUsed
 		end
 	end
@@ -204,18 +207,18 @@ local function ShowKill(boss, bossStatus)
 	local rollTexture = ""
 	local killed, bonusRollUsed, eligible = GetCurrentKillStatus(boss, bossStatus)
 
-	if killed then 
+	if killed then
 		bossTexture = textures.bossDefeated
 		color = red
 
-		if bonusRollUsed then			
-			rollTexture = textures.bonusRoll			
+		if bonusRollUsed then
+			rollTexture = textures.bonusRoll
 		end
 	elseif boss.active and eligible then
 		color = white
 		bossTexture = textures.bossAvailable
 	end
-	
+
 	subTooltip:SetCell(line, 1, boss.displayName or boss.name, nil, "LEFT")
 	subTooltip:SetCell(line, 2, boss.location or '', nil, "LEFT")
 	subTooltip:SetCell(line, 4, bossTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
@@ -225,7 +228,7 @@ local function ShowKill(boss, bossStatus)
 	subTooltip:SetCellTextColor(line, 3, color.r, color.g, color.b)
 end
 
-local function ShowBossKills(character, region)	
+local function ShowBossKills(character, region)
 	local subTooltip = WorldBossStatus.subTooltip
 	local nextReset = WorldBossStatus:GetNextReset()
 	local status = character.status or {}
@@ -234,17 +237,17 @@ local function ShowBossKills(character, region)
 
 	if LibQTip:IsAcquired("WBSsubTooltip") and subTooltip then
 		subTooltip:Clear()
-	else 
+	else
 		subTooltip = LibQTip:Acquire("WBSsubTooltip", 5, "LEFT", "LEFT", "LEFT", "RIGHT", "CENTER", "CENTER")
-		WorldBossStatus.subTooltip = subTooltip	
-	end	
+		WorldBossStatus.subTooltip = subTooltip
+	end
 
 	subTooltip:ClearAllPoints()
 	subTooltip:SetClampedToScreen(true)
 	subTooltip:SetPoint("TOP", WorldBossStatus.tooltip, "TOP", 30, 0)
 	subTooltip:SetPoint("RIGHT", WorldBossStatus.tooltip, "LEFT", -20, 0)
 
-	line = subTooltip:AddHeader(colorise(region.title, colors.yellow))	
+	line = subTooltip:AddHeader(colorise(region.title, colors.yellow))
 	subTooltip:AddSeparator(6,0,0,0,0)
 
 	line = subTooltip:AddLine(colorise('NPC', colors.yellow), colorise('Location', colors.yellow), nil, colorise('Status',colors.yellow))
@@ -257,11 +260,11 @@ local function ShowBossKills(character, region)
 		if not bossStatus and boss.worldQuestID then
 			bossStatus = status[tostring(boss.worldQuestID)]
 		end
-			
+
 		if not boss.faction or character.faction == boss.faction then
 			ShowKill(boss, bossStatus)
 		end
-	end	
+	end
 
 	subTooltip:AddSeparator(6,0,0,0,0)
 	line = subTooltip:AddLine()
@@ -309,16 +312,16 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 	tooltip:SetCell(line, 2, factionIcon.." "..characterName)
 
 	column = 2
-		
-	for _, currency in pairs(CURRENCIES) do					
+
+	for _, currency in pairs(CURRENCIES) do
 		local currencyInfo = nil
-		
-		if characterInfo.currencies then 
+
+		if characterInfo.currencies then
 			currencyInfo = characterInfo.currencies[currency.currencyId]
 		end
-		
+
 		column = column + 1
-		
+
 		if currencyInfo then
 			if currency.weeklyMax then
 				--if currencyInfo.collectedThisWeek == currency.weeklyMax then
@@ -357,14 +360,14 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 				if killed then
 					kills = kills + 1
 				end
-			end			
+			end
 		end
 
 		if eligibleBosses == 0 then
 			tooltip:SetCell(line, column, textures.bossInactive)
 		elseif kills >= eligibleBosses then
 			tooltip:SetCell(line, column, textures.bossDefeated)
-		else  
+		else
 			tooltip:SetCell(line, column, kills.."/"..eligibleBosses)
 		end
 
@@ -380,7 +383,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 	if characterInfo.class then
 		local color = RAID_CLASS_COLORS[characterInfo.class]
 		tooltip:SetCellTextColor(line, 2, color.r, color.g, color.b)
-	end	
+	end
 
 end
 
@@ -431,8 +434,8 @@ local function CheckUpgradeStatus()
 
 						if character.worldBossKills then
 							local worldBossKills = character.worldBossKills
-				
-							if worldBossKills[boss.name] then								
+
+							if worldBossKills[boss.name] then
 								bossStatus.eligible = true
 								bossStatus.killed = true
 								bossStatus.lastUpdated = worldBossKills[boss.name].KillTime or worldBossKills[boss.name].bonusRollTime
@@ -440,19 +443,19 @@ local function CheckUpgradeStatus()
 							end
 						elseif character.bossKills then
 							local bossKills = character.bossKills
-				
+
 							if  bossKills[boss.name] then
 								bossStatus.eligible = true
 								bossStatus.killed = bossKills[boss.name] == nextReset
 								bossStatus.lastUpdated = now()
-				
+
 							end
 						end
 
 						status[boss.index] = bossStatus
 					end
 
-					character.status = status					
+					character.status = status
 					character.worldBossKills = nil
 					characer.bossKills = nil
 					WorldBossStatus.db.global.realms[realm.name].characters[characer.name] = characer
@@ -460,11 +463,11 @@ local function CheckUpgradeStatus()
 			end
 		end
 	end
-	
+
 	WorldBossStatus.db.global.version = thisVersion
 end
 
-function WorldBossStatus:OnInitialize()	
+function WorldBossStatus:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("WorldBossStatusDB", defaults, true)
 	self.debug = self.db.global.debug
 
@@ -487,7 +490,7 @@ local function ShowHeader(tooltip, marker, headerName)
 	if (marker) then
 		tooltip:SetCell(line, 1, marker)
 	end
-	
+
 	tooltip:SetCell(line, 2, headerName, nil, nil, nil, nil, nil, 50)
 	tooltip:SetCellTextColor(line, 2, yellow.r, yellow.g, yellow.b)
 
@@ -507,7 +510,7 @@ local function ShowHeader(tooltip, marker, headerName)
 	end
 
 	return line
-end 
+end
 
 function WorldBossStatus:DisplayRealmInToolip(realmName)
 	local realmInfo = self.db.global.realms[realmName]
@@ -528,17 +531,17 @@ function WorldBossStatus:DisplayRealmInToolip(realmName)
 	local minimumLevel = 1
 
 	if WorldBossStatus.db.global.characterOptions.levelRestriction then
-		minimumLevel = WorldBossStatus.db.global.characterOptions.minimumLevel		
-		if not minimumLevel then minimumLevel = 90 end
-	end	
-		
+		minimumLevel = WorldBossStatus.db.global.characterOptions.minimumLevel
+		if not minimumLevel then minimumLevel = 35 end
+	end
+
 	if not characters then
-		return 
+		return
 	end
 
 	for k,v in pairs(characters) do
 		local inlcude = true
-		if (realmName ~= currentRealmName or k ~= currentCharacterName) and 
+		if (realmName ~= currentRealmName or k ~= currentCharacterName) and
 		   (not WorldBossStatus.db.global.characterOptions.removeInactive or v.lastUpdate > epoch)  and
    		   (v.level >= minimumLevel) then
 				table.insert(characterNames, k);
@@ -548,7 +551,7 @@ function WorldBossStatus:DisplayRealmInToolip(realmName)
 	if (table.getn(characterNames) == 0) then
 		return
 	end
-			   
+
 	table.sort(characterNames)
 
 	tooltip:AddSeparator(2,0,0,0,0)
@@ -567,7 +570,7 @@ function WorldBossStatus:DisplayRealmInToolip(realmName)
 		line = ShowHeader(tooltip, "|TInterface\\Buttons\\UI-PlusButton-Up:16|t", realmName)
 	end
 
-	tooltip:SetCellTextColor(line, 2, yellow.r, yellow.g, yellow.b)	
+	tooltip:SetCellTextColor(line, 2, yellow.r, yellow.g, yellow.b)
 	tooltip:SetCellScript(line, 1, "OnMouseUp", RealmOnClick, realmName)
 end
 
@@ -593,12 +596,12 @@ function WorldBossStatus:ShowToolTip()
 		WorldBossStatus:UpdateWorldBossKills();
 
 		columnCount = columnCount + 3
-		
+
 		for _, currency in pairs(CURRENCIES) do
 			columnCount = columnCount + 1
 		end
 		tooltip = LibQTip:Acquire("WorldBossStatusTooltip", columnCount, "CENTER", "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER")
-		WorldBossStatus.tooltip = tooltip 
+		WorldBossStatus.tooltip = tooltip
 	end
 
 	line = tooltip:AddHeader(" ")
@@ -606,7 +609,7 @@ function WorldBossStatus:ShowToolTip()
 	tooltip:AddSeparator(6,0,0,0,0)
 	ShowHeader(tooltip, nil, L["Character"])
 	tooltip:AddSeparator(6,0,0,0,0)
-			
+
 	local info = WorldBossStatus:GetCharacterInfo()
 	WorldBossStatus:DisplayCharacterInTooltip(characterName, info)
 	tooltip:AddSeparator(6,0,0,0,0)
@@ -615,16 +618,16 @@ function WorldBossStatus:ShowToolTip()
 	if includeCharacters > 1 then
 		WorldBossStatus:DisplayRealmInToolip(GetRealmName())
 	end
-			
+
 	if includeCharacters == 3 then
 		realmNames = {}
-				
+
 		for k,v in pairs(WorldBossStatus.db.global.realms) do
 			if (k ~= GetRealmName()) then
 				table.insert(realmNames, k);
 			end
 		end
-				
+
 		for k,v in pairs(realmNames) do
 			WorldBossStatus:DisplayRealmInToolip(v)
 		end
@@ -639,7 +642,7 @@ function WorldBossStatus:ShowToolTip()
 	if (frame) then
 		tooltip:SetAutoHideDelay(0.01, frame)
 		tooltip:SmartAnchorTo(frame)
-	end 
+	end
 
 	tooltip:UpdateScrolling()
 	tooltip:Show()
@@ -651,7 +654,7 @@ function WorldBossStatus:GetRealmInfo(realmName)
 	end
 
 	local realmInfo = self.db.global.realms[realmName]
-	
+
 	if not realmInfo then
 		realmInfo = {}
 		realmInfo.characters = {}
@@ -673,7 +676,7 @@ function WorldBossStatus:PlayerIsEligibleForBoss(boss)
 		if criteria.level and playerLevel < criteria.level then
 			eligible = false
 		end
-		if criteria[playerFaction] and not IsQuestFlaggedCompleted(tostring(criteria[playerFaction])) then
+		if criteria[playerFaction] and not C_QuestLog.IsQuestFlaggedCompleted(tostring(criteria[playerFaction])) then
 			eligible = false
 		end
 	end
@@ -683,7 +686,7 @@ function WorldBossStatus:PlayerIsEligibleForBoss(boss)
 
 local function UpdateStatusForCharacter(currentStatus)
 	local status = currentStatus or {}
-	local bossData = WorldBossStatus:GetBossData()	
+	local bossData = WorldBossStatus:GetBossData()
 	local now = time()
 
 	for _, category in pairs(bossData) do
@@ -691,10 +694,10 @@ local function UpdateStatusForCharacter(currentStatus)
 			local bossStatus = status[boss.index] or {}
 			local prerequisite = boss.prerequisite or {}
 
-			bossStatus.killed = (boss.trackingID and IsQuestFlaggedCompleted(boss.trackingID)) or
+			bossStatus.killed = (boss.trackingID and C_QuestLog.IsQuestFlaggedCompleted(boss.trackingID)) or
 				(boss.dungeonID and GetLFGDungeonRewards(boss.dungeonID))
 			bossStatus.eligible = WorldBossStatus:PlayerIsEligibleForBoss(boss)
-			bossStatus.bonusRollUsed = boss.bonusRollID and IsQuestFlaggedCompleted(boss.bonusRollID)
+			bossStatus.bonusRollUsed = boss.bonusRollID and C_QuestLog.IsQuestFlaggedCompleted(boss.bonusRollID)
 			bossStatus.lastUpdated = now
 
 			status[boss.index] = bossStatus
@@ -706,7 +709,7 @@ end
 
 function WorldBossStatus:SaveCharacterInfo(info)
 	local characterName = UnitName("player")
-	local realmName = GetRealmName()	
+	local realmName = GetRealmName()
 	local realmInfo = self:GetRealmInfo(realmName)
 	local characterInfo = info or self:GetCharacterInfo()
 
@@ -731,30 +734,30 @@ function WorldBossStatus:GetCharacterInfo()
 end
 
 function WorldBossStatus:GetBonusRollsStatus()
-	currencies = {}	
+	currencies = {}
 
 	for _, currency in pairs(CURRENCIES) do
-		local currencyInfo = {}		
-		local _, balance, _, collectedThisWeek, weeklyMax, totalMax, _, _ = GetCurrencyInfo(currency.currencyId)
+		local currencyInfo = {}
+		local apiCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
 		local collectedFromQuests = 0
 
 		if currency.quests then
-			for _, quest in pairs(currency.quests) do						
-				if IsQuestFlaggedCompleted(quest.questId) then
-					collectedFromQuests = collectedFromQuests + 1					
+			for _, quest in pairs(currency.quests) do
+				if C_QuestLog.IsQuestFlaggedCompleted(quest.questId) then
+					collectedFromQuests = collectedFromQuests + 1
 				end
-			end			
+			end
 
 		end
 
-		currencyInfo.collectedThisWeek = collectedThisWeek + collectedFromQuests
-		currencyInfo.balance = balance
-		currencyInfo.weeklyMax = weeklyMax
-		currencyInfo.totalMax = totalMax
-		currencyInfo.questReset = WorldBossStatus:GetNextReset()[2]				
-		currencies[currency.currencyId] = currencyInfo		
+		currencyInfo.collectedThisWeek = apiCurrencyInfo.quantityEarnedThisWeek + collectedFromQuests
+		currencyInfo.balance = apiCurrencyInfo.quantity --balance
+		currencyInfo.weeklyMax = apiCurrencyInfo.maxWeeklyQuantity --weeklyMax
+		currencyInfo.totalMax = apiCurrencyInfo.maxQuantity --totalMax
+		currencyInfo.questReset = WorldBossStatus:GetNextReset()[2]
+		currencies[currency.currencyId] = currencyInfo
 	end
-	
+
 	return currencies
 end
 
@@ -764,7 +767,7 @@ function WorldBossStatus:GetRegion()
 end
 
 function WorldBossStatus:ChatCommand(input)
-	if not input or input:trim() == "" then 
+	if not input or input:trim() == "" then
 		return
 	end
 
@@ -779,7 +782,7 @@ function WorldBossStatus:ChatCommand(input)
 	else
 		self:Print("Unknown command: " .. command)
 	end
-	
+
 	self.db.global.debug = self.debug
 end
 
@@ -800,18 +803,18 @@ end
 function WorldBossStatus:GetBossInfo(instance, name, questID)
 	local bossData = WorldBossStatus:GetBossData()
 	local bossInfo = nil
-	
+
 	for _, category in pairs(bossData) do
 		if category.name == instance or instance == nil then
 			for _, boss in pairs(category.bosses) do
 				if (name and boss.name == name) or (questID and questID == boss.trackingID) then
-					bossInfo = boss	
-					break		
+					bossInfo = boss
+					break
 				end
 			end
 		end
 	end
-	
+
 	return bossInfo
 end
 
@@ -825,17 +828,17 @@ function WorldBossStatus:BOSS_KILL(event, id, name)
 	if boss then
 		WorldBossStatus:SaveCharacterInfo()
 		if WorldBossStatus.debug then
-			WorldBossStatus:Print(" World boss killed: "..boss.name)	
+			WorldBossStatus:Print(" World boss killed: "..boss.name)
 		end
 	end
 end
 
 function WorldBossStatus:BONUS_ROLL_RESULT(event, rewardType, rewardLink, rewardQuantity, rewardSpecID)
 	if WorldBossStatus.debug then
-		WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")	
+		WorldBossStatus:Print("BONUS_ROLL_RESULT event received!")
 	end
 
-	
+
 end
 
 function WorldBossStatus:LFG_COMPLETION_REWARD()
@@ -850,8 +853,8 @@ function WorldBossStatus:QUEST_TURNED_IN(event, questID)
 	WorldBossStatus:SaveCharacterInfo()
 end
 
-function WorldBossStatus:UpdateWorldBossKills()	
-	RequestRaidInfo();		
+function WorldBossStatus:UpdateWorldBossKills()
+	RequestRaidInfo();
 end
 
 function WorldBossStatus:PLAYER_LOGOUT()
@@ -862,13 +865,13 @@ function WorldBossStatus:PLAYER_LOGOUT()
 	WorldBossStatus:UpdateWorldBossKills()
 end
 
-local function CheckWorldBosses()	
+local function CheckWorldBosses()
 	local bossData = WorldBossStatus:GetBossData()
 
 	for _, category in pairs(bossData) do
 		if not category.legacy then
 			for _, boss in pairs(category.bosses) do
-				if boss.worldQuestID and boss.active and not IsQuestFlaggedCompleted(boss.trackingID) and WorldBossStatus:PlayerIsEligibleForBoss(boss) then 
+				if boss.worldQuestID and boss.active and not C_QuestLog.IsQuestFlaggedCompleted(boss.trackingID) and WorldBossStatus:PlayerIsEligibleForBoss(boss) then
 					local timeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(boss.worldQuestID)
 					local bossname = colorise(boss.name, epic)
 					local text = ""
@@ -931,9 +934,9 @@ function WorldBossStatus:ReceiveComms(aPrefix, aMessage, aChannel, aSender)
 	if aSender ~= UnitName("player") then
 		local success, message = self:Deserialize(aMessage)
 
-		if self.debug then 
+		if self.debug then
 			if success then
-			
+
 				self:Print("Received comms from "..aSender.." [" ..message.version.."] on the "..aChannel.." channel and deserialized succesully!")
 			else
 				self:Print("Received comms from "..aSender.." on the "..aChannel.." channel but did not deserialize!")
@@ -943,12 +946,12 @@ function WorldBossStatus:ReceiveComms(aPrefix, aMessage, aChannel, aSender)
 		if success then
 			self:UpdateLastSeenData(message.lastSeen)
 			VersionCheck(message.version)
-		end		
+		end
 	end
 end
 
 function WorldBossStatus:RAID_ROSTER_UPDATE(event, ...)
-	if self.debug then 
+	if self.debug then
 		self:Print("Received event RAID_ROSTER_UPDATE")
 	end
 	DelayedSendComms("RAID")
@@ -973,10 +976,10 @@ function WorldBossStatus:GUILD_ROSTER_UPDATE(event, arg1, ...)
 	DelayedSendComms("GUILD")
 end
 
-function WorldBossStatus:OnEnable()	
+function WorldBossStatus:OnEnable()
 	self:RegisterEvent("UPDATE_INSTANCE_INFO")
 	self:RegisterEvent("LFG_UPDATE_RANDOM_INFO")
-	self:RegisterEvent("LFG_COMPLETION_REWARD")	
+	self:RegisterEvent("LFG_COMPLETION_REWARD")
 	self:RegisterEvent("BONUS_ROLL_RESULT")
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
