@@ -55,7 +55,11 @@ local CURRENCIES = {	{currencyId = 1580,														  -- Seal of Wartorn Fate
 
 								  }
 						},
-						{currencyId = 1560}													  -- War Resources
+						--{currencyId = 1813}													  -- Reservoir Anima
+}
+
+local trackedCurrencies = {
+	{currencyId = 1813}				-- Reservoir Anima	
 }
 
 
@@ -108,6 +112,15 @@ for key, currency in pairs(CURRENCIES) do
 		apiCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
 		currency.name = apiCurrencyInfo.Name
 		currency.texture = apiCurrencyInfo.iconFileID
+	end
+end
+
+for key, currency in pairs(trackedCurrencies) do
+	if not currency.name and currency.currencyId then
+		--currency.name, _, currency.texture = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
+		info = C_CurrencyInfo.GetCurrencyInfo(currency.currencyId)
+		currency.name = info.Name
+		currency.texture = info.iconFileID
 	end
 end
 
@@ -313,7 +326,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 
 	column = 2
 
-	for _, currency in pairs(CURRENCIES) do
+	for _, currency in pairs(trackedCurrencies) do
 		local currencyInfo = nil
 
 		if characterInfo.currencies then
@@ -330,7 +343,7 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 					tooltip:SetCell(line, column, currencyInfo.balance .. "  " .. currencyInfo.collectedThisWeek.."/"..currency.weeklyMax, nil, "RIGHT")
 				--end
 			else
-				tooltip:SetCell(line, column, BreakUpLargeNumbers(currencyInfo.balance), nil, "RIGHT")
+				tooltip:SetCell(line, column, BreakUpLargeNumbers(currencyInfo.quantity), nil, "RIGHT")
 			end
 
 		else
@@ -357,19 +370,26 @@ function WorldBossStatus:DisplayCharacterInTooltip(characterName, characterInfo)
 			if boss.active and eligible then
 				eligibleBosses = eligibleBosses + 1
 
-				if killed then
-					kills = kills + 1
-				end
+				
+			end
+			if killed then
+				kills = kills + 1
 			end
 		end
 
-		if eligibleBosses == 0 then
-			tooltip:SetCell(line, column, textures.bossInactive)
-		elseif kills >= eligibleBosses then
+		if kills > eligibleBosses  then
 			tooltip:SetCell(line, column, textures.bossDefeated)
+		
+		elseif eligibleBosses == 0 then
+			tooltip:SetCell(line, column, textures.bossInactive)
+		elseif kills == eligibleBosses  then
+			tooltip:SetCell(line, column, textures.bossDefeated)
+			--tooltip:SetCell(line, column, kills.."/"..eligibleBosses)
 		else
 			tooltip:SetCell(line, column, kills.."/"..eligibleBosses)
 		end
+
+		--tooltip:SetCell(line, column, kills.."/"..eligibleBosses)
 
 		tooltip:SetCellScript(line, column, "OnEnter", function(self)
 			local info = { character=characterInfo, region=category}
@@ -496,7 +516,7 @@ local function ShowHeader(tooltip, marker, headerName)
 
 	column = 2
 
-	for _, currency in pairs(CURRENCIES) do
+	for _, currency in pairs(trackedCurrencies) do
 		column = column + 1
 		tooltip:SetCell(line, column, "|T"..currency.texture..":0|t", nil, "RIGHT")
 	end
@@ -597,7 +617,7 @@ function WorldBossStatus:ShowToolTip()
 
 		columnCount = columnCount + 3
 
-		for _, currency in pairs(CURRENCIES) do
+		for _, currency in pairs(trackedCurrencies) do
 			columnCount = columnCount + 1
 		end
 		tooltip = LibQTip:Acquire("WorldBossStatusTooltip", columnCount, "CENTER", "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER")
@@ -707,6 +727,21 @@ local function UpdateStatusForCharacter(currentStatus)
 	return status
 end
 
+local function UpdateCurrenciesForCharracter(currentCurrencies)
+	local currencies = currentCurrencies or {}
+
+	for _, trackedCurrency in pairs(trackedCurrencies) do
+		local currency = {}
+		local info = C_CurrencyInfo.GetCurrencyInfo(trackedCurrency.currencyId)
+
+		currency.quantityEarnedThisWeek = info.quantityEarnedThisWeek
+		currency.quantity = info.quantity
+		currencies[trackedCurrency.currencyId] = currency
+	end
+
+	return currencies
+end
+
 function WorldBossStatus:SaveCharacterInfo(info)
 	local characterName = UnitName("player")
 	local realmName = GetRealmName()
@@ -727,8 +762,8 @@ function WorldBossStatus:GetCharacterInfo()
 	characterInfo.class = className
 	characterInfo.level = UnitLevel("player")
 	characterInfo.faction = UnitFactionGroup("player")
-	characterInfo.currencies = WorldBossStatus:GetBonusRollsStatus()
 	characterInfo.status = UpdateStatusForCharacter(characterInfo.status)
+	characterInfo.currencies = UpdateCurrenciesForCharracter(characterInfo.currencies)
 
 	return characterInfo
 end

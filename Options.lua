@@ -144,9 +144,12 @@ local optionsTable = {
 							type = "range",
 							name = L["Minimum Level"],
 							desc = L["Show characters this level and higher."],
-							step = 1, min = 1, max = 120,
+							step = 1, min = 1, max = 60,
 							order = 2,
 							get = function(info)
+								if WorldBossStatus.db.global.characterOptions.minimumLevel > 60 then
+									WorldBossStatus.db.global.characterOptions.minimumLevel = 60
+								end
 								return WorldBossStatus.db.global.characterOptions.minimumLevel
 							end,
 							set = function(info, value)
@@ -368,12 +371,9 @@ function WorldBossStatus:InitializeOptions()
 end
 
 function WorldBossStatus:ShowOptions()
-    function WorldBossStatus:ShowOptions()
-        InterfaceOptionsFrame_OpenToCategory(L["World Boss Status"])
-        --InterfaceOptionsFrame_OpenToCategory(WorldBossStatus.optionsFrame)
-        --InterfaceOptionsFrame_OpenToCategory(WorldBossStatus.OptionsFrame)
-        WorldBossStatus:GetBossData(true)
-    end    
+	InterfaceOptionsFrame_OpenToCategory(L["World Boss Status"])
+	InterfaceOptionsFrame_OpenToCategory(L["World Boss Status"])
+    WorldBossStatus:GetBossData(true)
 end
 
 function WorldBossStatus:GetDefaults()

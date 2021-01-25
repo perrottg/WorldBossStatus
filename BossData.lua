@@ -180,6 +180,29 @@ function AddHoliday()
 	end
 end
 
+function AddShadowlands()
+	local category = {}
+	local criteria = {
+		level = 60
+	}
+
+	category.name = _G["EXPANSION_NAME8"]
+	category.title = category.name.." "..L["Bosses"]
+	category.expansion = 8
+	category.bosses = {
+		GetWorldBoss({worldQuestID = 61813, encounterID = 2430, prerequisite = criteria }),		-- Valinor, the Light of Eons
+		GetWorldBoss({worldQuestID = 61816, encounterID = 2431, prerequisite = criteria }),		-- Mortanis
+		GetWorldBoss({worldQuestID = 61815, encounterID = 2432, prerequisite = criteria }),		-- Oranonomos, the Everbreaching
+		GetWorldBoss({worldQuestID = 61814, encounterID = 2433, prerequisite = criteria }),		-- Nurgash Muckformed
+	}
+	if GetAccountExpansionLevel() >= category.expansion and
+		(not WorldBossStatus.db.global.bossOptions.ignoredExpansions or
+		not WorldBossStatus.db.global.bossOptions.ignoredExpansions[category.expansion]) then
+		--WorldBossStatus.data[#WorldBossStatus.data +1] = category
+		table.insert(WorldBossStatus.data, category)
+	end
+end
+
 function AddZandalarAndKulTiras()
 	local category = {}
 	local criteria = {
@@ -353,6 +376,7 @@ function WorldBossStatus:GetBossData(update)
 		WorldBossStatus.data = {}
 
 		AddHoliday()
+		AddShadowlands()
 		AddZandalarAndKulTiras()
 		AddBrokenIsles()
 		AddDraenor()
