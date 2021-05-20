@@ -1,4 +1,4 @@
-## Interface: 90000
+## Interface: 90005
 ## Title: World Boss Status
 ## Version: @project-version@
 ## Author: Ludius of Caelestrasz-US
