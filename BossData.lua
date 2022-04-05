@@ -185,11 +185,16 @@ function AddShadowlands()
 	local criteria = {
 		level = 60
 	}
+	local antrosCriteria = {
+		['Alliance'] = 64230,
+		['Horde'] = 64230
+	}
 
 	category.name = _G["EXPANSION_NAME8"]
 	category.title = category.name.." "..L["Bosses"]
 	category.expansion = 8
 	category.bosses = {
+            GetWorldBoss({worldQuestID = 65143, encounterID = 2468, prerequisite = antrosCriteria }),		-- Antros
 		GetWorldBoss({worldQuestID = 61813, encounterID = 2430, prerequisite = criteria }),		-- Valinor, the Light of Eons
 		GetWorldBoss({worldQuestID = 61816, encounterID = 2431, prerequisite = criteria }),		-- Mortanis
 		GetWorldBoss({worldQuestID = 61815, encounterID = 2432, prerequisite = criteria }),		-- Oranonomos, the Everbreaching
